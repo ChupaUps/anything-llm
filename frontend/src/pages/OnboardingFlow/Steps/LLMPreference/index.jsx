@@ -225,7 +225,7 @@ const LLMS = [
       "Run powerful and internet-connected models hosted by Perplexity AI.",
   },
   {
-    name: "OpenRouter",
+    name: "Interstorm",
     value: "openrouter",
     logo: OpenRouterLogo,
     options: (settings) => <OpenRouterOptions settings={settings} />,

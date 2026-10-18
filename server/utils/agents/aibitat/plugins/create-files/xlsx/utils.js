@@ -224,7 +224,7 @@ function applyBranding(workbook) {
     }
 
     const brandingCell = worksheet.getCell(brandingRowNum, 1);
-    brandingCell.value = "Created with AnythingLLM";
+    brandingCell.value = "Создано с Интершторм-ИИ";
     brandingCell.font = {
       italic: true,
       size: 9,
