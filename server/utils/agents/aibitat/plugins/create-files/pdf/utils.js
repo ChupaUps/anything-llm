@@ -51,7 +51,7 @@ async function applyBranding(pdfDoc, { rgb, StandardFonts }) {
         opacity: 0.6,
       });
     } else {
-      const fallbackText = "Created with AnythingLLM";
+      const fallbackText = "Создано с Интершторм-ИИ";
       const fontSize = 9;
       const textWidth = font.widthOfTextAtSize(fallbackText, fontSize);
       page.drawText(fallbackText, {
