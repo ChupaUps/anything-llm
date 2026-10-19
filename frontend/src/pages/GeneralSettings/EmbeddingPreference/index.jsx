@@ -15,7 +15,7 @@ import VoyageAiLogo from "@/media/embeddingprovider/voyageai.png";
 import LiteLLMLogo from "@/media/llmprovider/litellm.png";
 import GenericOpenAiLogo from "@/media/llmprovider/generic-openai.png";
 import MistralAiLogo from "@/media/llmprovider/mistral.jpeg";
-import OpenRouterLogo from "@/media/llmprovider/openrouter.jpeg";
+import OpenRouterLogo from "@/media/llmprovider/openrouter.png";
 import LemonadeLogo from "@/media/llmprovider/lemonade.png";
 
 import PreLoader from "@/components/Preloader";

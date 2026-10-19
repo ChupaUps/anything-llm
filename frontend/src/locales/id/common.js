@@ -220,6 +220,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Penyedia LLM Ruang Kerja",
       description:
@@ -923,6 +931,11 @@ const TRANSLATIONS = {
           "Sesuaikan item footer yang ditampilkan di bagian bawah sidebar.",
         icon: "Ikon",
         link: "Tautan",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Render HTML dalam obrolan",

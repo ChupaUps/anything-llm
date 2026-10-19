@@ -7,6 +7,7 @@ import { safeJsonParse } from "@/utils/request";
  * 'autoPlayAssistantTtsResponse' |
  * 'enableSpellCheck' |
  * 'renderHTML' |
+ * 'codePreview' |
  * 'disableAutoScroll'
  * } AvailableSettings - The supported settings for the appearance model.
  */
@@ -18,12 +19,13 @@ const Appearance = {
     autoPlayAssistantTtsResponse: false,
     enableSpellCheck: true,
     renderHTML: false,
+    codePreview: true,
     disableAutoScroll: false,
   },
 
   /**
    * Fetches any locally storage settings for the user
-   * @returns {{showScrollbar: boolean, autoSubmitSttInput: boolean, autoPlayAssistantTtsResponse: boolean, enableSpellCheck: boolean, renderHTML: boolean}}
+   * @returns {{showScrollbar: boolean, autoSubmitSttInput: boolean, autoPlayAssistantTtsResponse: boolean, enableSpellCheck: boolean, renderHTML: boolean, codePreview: boolean}}
    */
   getSettings: () => {
     const settings = localStorage.getItem(APPEARANCE_SETTINGS);

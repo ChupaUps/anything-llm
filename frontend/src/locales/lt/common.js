@@ -217,6 +217,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Darbo srities LLM tiekėjas",
       description:
@@ -928,6 +936,11 @@ const TRANSLATIONS = {
           "Pritaikykite elementus, rodomus šoninės juostos apačioje.",
         icon: "Piktograma",
         link: "Nuoroda",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Atvaizduoti HTML pokalbyje",

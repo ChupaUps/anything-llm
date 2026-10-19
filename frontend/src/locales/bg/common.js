@@ -220,6 +220,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "LLM доставчик за пространството",
       description:
@@ -936,6 +944,11 @@ const TRANSLATIONS = {
           "Персонализирайте елементите, показвани в долната част на страничната лента.",
         icon: "Икона",
         link: "Връзка",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Показвай HTML в чата",

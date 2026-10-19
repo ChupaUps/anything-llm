@@ -7,7 +7,7 @@ import AnythingLLMIcon from "@/media/logo/anything-llm-icon.png";
 import OpenAiLogo from "@/media/llmprovider/openai.png";
 import OllamaLogo from "@/media/llmprovider/ollama.png";
 import LemonadeLogo from "@/media/llmprovider/lemonade.png";
-import OpenRouterLogo from "@/media/llmprovider/openrouter.jpeg";
+import OpenRouterLogo from "@/media/llmprovider/openrouter.png";
 import LocalAiLogo from "@/media/llmprovider/localai.png";
 import LlmmanLogo from "@/media/llmprovider/llmman.png";
 import GeminiLogo from "@/media/llmprovider/gemini.png";

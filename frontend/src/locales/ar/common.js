@@ -173,6 +173,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "موفر نموذج التعلم العميق لمساحة العمل",
       description:
@@ -1409,6 +1417,11 @@ const TRANSLATIONS = {
           "خصص عناصر التذييل المعروضة في الجزء السفلي من الشريط الجانبي.",
         icon: "رمز",
         link: "رابط",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "تحويل HTML إلى تنسيق نصي في الدردشة",

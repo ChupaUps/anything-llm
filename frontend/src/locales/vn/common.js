@@ -174,6 +174,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Nhà cung cấp LLM Không gian làm việc",
       description:
@@ -1426,6 +1434,11 @@ const TRANSLATIONS = {
         description: "Tùy chỉnh các mục chân trang hiển thị ở cuối thanh bên.",
         icon: "Biểu tượng",
         link: "Liên kết",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Hiển thị HTML trong trò chuyện",

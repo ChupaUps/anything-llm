@@ -204,6 +204,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "工作区 LLM 提供者",
       description:
@@ -863,6 +871,11 @@ const TRANSLATIONS = {
         description: "自定义显示在侧边栏底部的项目。",
         icon: "图标",
         link: "链接",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "在聊天中渲染 HTML",

@@ -206,6 +206,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "ספק מודל שפה (LLM) של סביבת העבודה",
       description:
@@ -890,6 +898,11 @@ const TRANSLATIONS = {
           "התאם אישית את פריטי הכותרת התחתונה המוצגים בתחתית סרגל הצד.",
         icon: "סמל",
         link: "קישור",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "הצגת קוד HTML בשיחת צ'אט",

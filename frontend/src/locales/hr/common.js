@@ -220,6 +220,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "LLM pružatelj usluga za radni prostor",
       description:
@@ -930,6 +938,11 @@ const TRANSLATIONS = {
           "Prilagodite stavke podnožja koje se prikazuju na dnu bočne trake.",
         icon: "Ikona",
         link: "Poveznica",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Prikaži HTML u razgovoru",
