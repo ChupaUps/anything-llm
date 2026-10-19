@@ -174,6 +174,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "ارائه‌دهنده LLM فضای کاری",
       description:
@@ -1424,6 +1432,11 @@ const TRANSLATIONS = {
         description: "تنظیم عناصر پاورهای نمایش داده شده در پایین بخش کناری.",
         icon: "آیکون",
         link: "لینک",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "نمایش کد HTML در چت",

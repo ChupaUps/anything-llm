@@ -217,6 +217,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "वर्कस्पेस LLM प्रदाता",
       description:
@@ -920,6 +928,11 @@ const TRANSLATIONS = {
           "साइडबार के निचले भाग में प्रदर्शित फ़ुटर आइटम अनुकूलित करें।",
         icon: "आइकन",
         link: "लिंक",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "चैट में HTML रेंडर करें",

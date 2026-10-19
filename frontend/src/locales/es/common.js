@@ -212,6 +212,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Proveedor de LLM del espacio de trabajo",
       description:
@@ -956,6 +964,11 @@ const TRANSLATIONS = {
           "Personaliza los elementos del pie de página que se muestran en la parte inferior de la barra lateral.",
         icon: "Icono",
         link: "Enlace",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Renderizar HTML en el chat",

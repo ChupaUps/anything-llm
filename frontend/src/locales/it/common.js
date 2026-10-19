@@ -175,6 +175,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "LLM Provider dell'area di lavoro",
       description:
@@ -1471,6 +1479,11 @@ const TRANSLATIONS = {
           "Personalizza gli elementi del footer visualizzati nella parte inferiore della barra laterale.",
         icon: "Icon",
         link: "Link",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Visualizza codice HTML in chat",

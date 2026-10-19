@@ -174,6 +174,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Çalışma Alanı LLM Sağlayıcısı",
       description:
@@ -1449,6 +1457,11 @@ const TRANSLATIONS = {
           "Kenar çubuğunun altında görüntülenen alt bilgi öğelerini özelleştirin.",
         icon: "Simge",
         link: "Bağlantı",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Sohbette HTML Görüntüle",

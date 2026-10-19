@@ -240,6 +240,10 @@ function buildMessages({
   return history.reduce((acc, props, index) => {
     const isLastBotReply =
       index === history.length - 1 && props.role === "assistant";
+    // A live reply is re-rendered on every delta, which would wipe out any
+    // preview the user opened - RUN stays hidden until the run settles.
+    const isLiveReply =
+      isLastBotReply && (!!websocket || !!props.animate || !!props.pending);
 
     if (props?.type === "statusResponse" && !!props.content) {
       pushActivity(acc, props);
@@ -356,6 +360,7 @@ function buildMessages({
             metrics={props.metrics}
             outputs={props.outputs}
             clarifyingQuestions={props.clarifyingQuestions}
+            allowCodePreview={props.role === "assistant" && !isLiveReply}
           />
         );
       }

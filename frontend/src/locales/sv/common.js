@@ -218,6 +218,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "LLM-leverantör för arbetsytan",
       description:
@@ -928,6 +936,11 @@ const TRANSLATIONS = {
         description: "Anpassa objekten i sidfoten längst ned i sidofältet.",
         icon: "Ikon",
         link: "Länk",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Rendera HTML i chatten",

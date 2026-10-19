@@ -167,6 +167,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "工作區 LLM 提供者",
       description:
@@ -1342,6 +1350,11 @@ const TRANSLATIONS = {
         description: "自訂側邊欄底部顯示的項目。",
         icon: "圖示",
         link: "連結",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "在對話中渲染 HTML",

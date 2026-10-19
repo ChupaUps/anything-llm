@@ -175,6 +175,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Arbejdsområdets LLM-udbyder",
       description:
@@ -1436,6 +1444,11 @@ const TRANSLATIONS = {
           "Tilpas de elementer, der vises i fodervirket nederst i sidepanelet.",
         icon: "Ikon",
         link: "Link",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Vis HTML i chat",

@@ -210,6 +210,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Darba telpas LLM pakalpojumu sniedzējs",
       description:
@@ -931,6 +939,11 @@ const TRANSLATIONS = {
           "Pielāgojiet kājenes vienumus, kas tiek attēloti sānu joslas apakšā.",
         icon: "Ikona",
         link: "Saite",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Izveidot HTML saturu, ko var izmantot čatā.",

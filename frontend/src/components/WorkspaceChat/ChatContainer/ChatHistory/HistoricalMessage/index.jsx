@@ -52,6 +52,7 @@ const HistoricalMessage = ({
   metrics = {},
   outputs = [],
   clarifyingQuestions = [],
+  allowCodePreview = false,
 }) => {
   // Freeze uuid on first render. User messages arrive without a uuid and this value
   // is used as the wrapper div's `key` — a default param fallback would regenerate
@@ -161,7 +162,11 @@ const HistoricalMessage = ({
         ) : (
           <div className="break-words">
             <HistoricalClarifyingQuestions surveys={clarifyingQuestions} />
-            <RenderChatContent role={role} message={message} />
+            <RenderChatContent
+              role={role}
+              message={message}
+              allowCodePreview={allowCodePreview}
+            />
             {isRefusalMessage && (
               <Link
                 data-tooltip-id="query-refusal-info"
@@ -228,6 +233,7 @@ export default memo(
       prevProps.message === nextProps.message &&
       prevProps.isLastMessage === nextProps.isLastMessage &&
       prevProps.chatId === nextProps.chatId &&
+      prevProps.allowCodePreview === nextProps.allowCodePreview &&
       JSON.stringify(prevProps.metrics) === JSON.stringify(nextProps.metrics) &&
       JSON.stringify(prevProps.sources) === JSON.stringify(nextProps.sources) &&
       JSON.stringify(prevProps.clarifyingQuestions) ===
@@ -319,7 +325,7 @@ function TruncatableContent({ children }) {
 }
 
 const RenderChatContent = memo(
-  ({ role, message }) => {
+  ({ role, message, allowCodePreview = false }) => {
     // If the message is not from the assistant, we can render it directly
     // as normal since the user cannot think (lol)
     if (role !== "assistant")
@@ -327,7 +333,9 @@ const RenderChatContent = memo(
         <span
           className="flex flex-col gap-y-1 text-white light:text-slate-900"
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(renderMarkdown(message)),
+            __html: DOMPurify.sanitize(
+              renderMarkdown(message, { allowCodePreview: false })
+            ),
           }}
         />
       );
@@ -347,7 +355,9 @@ const RenderChatContent = memo(
       <span
         className="flex flex-col gap-y-1 text-white light:text-slate-900"
         dangerouslySetInnerHTML={{
-          __html: DOMPurify.sanitize(renderMarkdown(msgToRender)),
+          __html: DOMPurify.sanitize(
+            renderMarkdown(msgToRender, { allowCodePreview })
+          ),
         }}
       />
     );
@@ -355,7 +365,8 @@ const RenderChatContent = memo(
   (prevProps, nextProps) => {
     return (
       prevProps.role === nextProps.role &&
-      prevProps.message === nextProps.message
+      prevProps.message === nextProps.message &&
+      prevProps.allowCodePreview === nextProps.allowCodePreview
     );
   }
 );

@@ -22,6 +22,7 @@ import {
 import { PENDING_HOME_MESSAGE } from "@/utils/constants";
 import { PROMPT_INPUT_ID } from "./ChatContainer/PromptInput";
 import { movePromptInputDraft } from "@/hooks/usePromptInputStorage";
+import { installCodePreviewDelegator } from "@/utils/chat/codePreview";
 
 export default function WorkspaceChat({ loading, workspace }) {
   useWatchForAutoPlayAssistantTTSResponse();
@@ -126,6 +127,7 @@ export default function WorkspaceChat({ loading, workspace }) {
   }
 
   setEventDelegatorForCodeSnippets();
+  installCodePreviewDelegator();
 
   return (
     <TTSProvider>
@@ -175,10 +177,13 @@ function DnDWrapper({ children, loaded, opts }) {
 function copyCodeSnippet(uuid) {
   const target = document.querySelector(`[data-code="${uuid}"]`);
   if (!target) return false;
+  // Runnable code blocks host the copy button in their own header, so the
+  // source has to be looked up from the block rather than by parent hops.
+  const block = target.closest("[data-code-block]");
   const markdown =
-    target.parentElement?.parentElement?.querySelector(
-      "pre:first-of-type"
-    )?.innerText;
+    block?.querySelector("pre[data-code-source]")?.innerText ??
+    target.parentElement?.parentElement?.querySelector("pre:first-of-type")
+      ?.innerText;
   if (!markdown) return false;
 
   window.navigator.clipboard.writeText(markdown);

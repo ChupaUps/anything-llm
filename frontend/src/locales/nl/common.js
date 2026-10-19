@@ -174,6 +174,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Werkruimte LLM Provider",
       description:
@@ -1448,6 +1456,11 @@ const TRANSLATIONS = {
           "Pas de voettekst items aan die onderaan de zijbalk worden weergegeven.",
         icon: "Pictogram",
         link: "Link",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "HTML weergeven in chat",

@@ -7,6 +7,7 @@ import SpellCheck from "../components/SpellCheck";
 import ShowScrollbar from "../components/ShowScrollbar";
 import AutoScroll from "../components/AutoScroll";
 import ChatRenderHTML from "../components/ChatRenderHTML";
+import ChatCodePreview from "../components/ChatCodePreview";
 
 export default function ChatSettings() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ export default function ChatSettings() {
           <ShowScrollbar />
           <AutoScroll />
           <ChatRenderHTML />
+          <ChatCodePreview />
         </div>
       </div>
     </div>

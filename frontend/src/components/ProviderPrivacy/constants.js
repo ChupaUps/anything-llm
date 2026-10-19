@@ -12,7 +12,7 @@ import LMStudioLogo from "@/media/llmprovider/lmstudio.png";
 import LocalAiLogo from "@/media/llmprovider/localai.png";
 import MistralLogo from "@/media/llmprovider/mistral.jpeg";
 import PerplexityLogo from "@/media/llmprovider/perplexity.png";
-import OpenRouterLogo from "@/media/llmprovider/openrouter.jpeg";
+import OpenRouterLogo from "@/media/llmprovider/openrouter.png";
 import NovitaLogo from "@/media/llmprovider/novita.png";
 import GroqLogo from "@/media/llmprovider/groq.png";
 import KoboldCPPLogo from "@/media/llmprovider/koboldcpp.png";

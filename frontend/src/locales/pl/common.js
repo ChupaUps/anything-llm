@@ -210,6 +210,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Dostawca modeli językowych dla obszaru roboczego",
       description:
@@ -941,6 +949,11 @@ const TRANSLATIONS = {
         description: "Dostosuj linki wyświetlane w stopce paska bocznego.",
         icon: "Ikona",
         link: "Link",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Renderowanie HTML w czacie",

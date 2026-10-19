@@ -212,6 +212,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "Furnizor LLM pentru spațiu de lucru",
       description:
@@ -1499,6 +1507,11 @@ const TRANSLATIONS = {
           "Personalizează elementele din subsol afișate în partea de jos a barei laterale.",
         icon: "Iconiță",
         link: "Link",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "Redarea HTML în chat",

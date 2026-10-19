@@ -218,6 +218,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "ຜູ້ໃຫ້ບໍລິການ LLM ຂອງພື້ນທີ່ເຮັດວຽກ",
       description:
@@ -884,6 +892,11 @@ const TRANSLATIONS = {
         description: "ປັບແຕ່ງລາຍການທີ່ຈະສະແດງຢູ່ທາງລຸ່ມຂອງແຖບດ້ານຂ້າງ.",
         icon: "ໄອຄອນ",
         link: "ລິ້ງ",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "ສະແດງ HTML ໃນແຊັດ",

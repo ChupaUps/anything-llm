@@ -207,6 +207,14 @@ const TRANSLATIONS = {
     },
   },
   chat: {
+    "code-preview": {
+      run: "RUN",
+      preview: "Preview",
+      hide: "Hide",
+      loading: "Loading preview",
+      error: "Preview failed",
+      "unknown-import": "This import is not available in the preview",
+    },
     llm: {
       title: "워크스페이스 LLM 제공자",
       description:
@@ -902,6 +910,11 @@ const TRANSLATIONS = {
         description: "사이드바 하단에 표시될 푸터 항목을 맞춤 설정하세요.",
         icon: "아이콘",
         link: "링크",
+      },
+      "code-preview": {
+        title: "Code preview",
+        description:
+          "Run HTML, JSX and TSX code blocks in an isolated sandbox right inside the chat.",
       },
       "render-html": {
         title: "채팅에서 HTML 렌더링",

@@ -88,7 +88,11 @@ function RenderAssistantChatContent({ message }) {
     <span
       className="break-words flex flex-col gap-y-1"
       dangerouslySetInnerHTML={{
-        __html: DOMPurify.sanitize(renderMarkdown(msgToRender)),
+        // This component only exists while the reply is streaming, and the
+        // DOM is replaced on every delta - a preview could not survive it.
+        __html: DOMPurify.sanitize(
+          renderMarkdown(msgToRender, { allowCodePreview: false })
+        ),
       }}
     />
   );
