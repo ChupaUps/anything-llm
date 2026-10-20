@@ -10,6 +10,7 @@ const {
 } = require("./helpers/tooled.js");
 const { RetryError } = require("../error.js");
 const { reasoningParams } = require("../../../helpers/reasoningEffort");
+const { createSseFramingFetch } = require("./helpers/sseFramingFetch.js");
 
 /**
  * The agent provider for the OpenRouter provider.
@@ -28,6 +29,9 @@ class OpenRouterProvider extends InheritMultiple([Provider, UnTooled]) {
     const client = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
+      // OpenRouter reuses the same SSE writer, so it can send two data lines
+      // without the blank line that separates events.
+      fetch: createSseFramingFetch(),
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
         "X-Title": "AnythingLLM",
