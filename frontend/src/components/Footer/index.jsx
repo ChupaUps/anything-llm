@@ -51,15 +51,15 @@ export default function Footer() {
         <div className="flex space-x-4">
           <div className="flex w-fit">
             <Link
-              to={paths.github()}
+              to={paths.site()}
               target="_blank"
               rel="noreferrer"
               className="transition-all duration-300 p-2 rounded-full bg-theme-sidebar-footer-icon hover:bg-theme-sidebar-footer-icon-hover"
-              aria-label="Find us on GitHub"
+              aria-label="Сайт Интершторм"
               data-tooltip-id="footer-item"
-              data-tooltip-content="View Source Code"
+              data-tooltip-content="Сайт Интершторм"
             >
-              <GithubLogo
+              <Globe
                 weight="fill"
                 className="h-5 w-5 text-white light:text-slate-800"
               />
@@ -67,13 +67,13 @@ export default function Footer() {
           </div>
           <div className="flex w-fit">
             <Link
-              to={paths.docs()}
+              to={paths.product()}
               target="_blank"
               rel="noreferrer"
               className="transition-all duration-300 p-2 rounded-full bg-theme-sidebar-footer-icon hover:bg-theme-sidebar-footer-icon-hover"
-              aria-label="Docs"
+              aria-label="Интершторм-ИИ"
               data-tooltip-id="footer-item"
-              data-tooltip-content="Open AnythingLLM help docs"
+              data-tooltip-content="Интершторм-ИИ: возможности и справка"
             >
               <BookOpen
                 weight="fill"
@@ -83,15 +83,15 @@ export default function Footer() {
           </div>
           <div className="flex w-fit">
             <Link
-              to={paths.discord()}
+              to={paths.communityChat()}
               target="_blank"
               rel="noreferrer"
               className="transition-all duration-300 p-2 rounded-full bg-theme-sidebar-footer-icon hover:bg-theme-sidebar-footer-icon-hover"
-              aria-label="Join our Discord server"
+              aria-label="Чат в Telegram"
               data-tooltip-id="footer-item"
-              data-tooltip-content="Join the AnythingLLM Discord"
+              data-tooltip-content="Чат поддержки в Telegram"
             >
-              <DiscordLogo
+              <LinkSimple
                 weight="fill"
                 className="h-5 w-5 text-white light:text-slate-800"
               />

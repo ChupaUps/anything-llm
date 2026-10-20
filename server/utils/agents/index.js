@@ -176,7 +176,7 @@ class AgentHandler {
         break;
       case "openrouter":
         if (!process.env.OPENROUTER_API_KEY)
-          throw new Error("OpenRouter API key must be provided to use agents.");
+          throw new Error("Interstorm API key must be provided to use agents.");
         break;
       case "mistral":
         if (!process.env.MISTRAL_API_KEY)

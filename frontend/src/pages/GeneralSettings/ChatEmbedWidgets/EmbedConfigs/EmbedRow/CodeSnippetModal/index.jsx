@@ -33,14 +33,14 @@ function createScriptTagSnippet(embed, scriptHost, serverHost) {
   return `<!--
 Paste this script at the bottom of your HTML before the </body> tag.
 See more style and config options on our docs
-https://github.com/Mintplex-Labs/anythingllm-embed/blob/main/README.md
+https://www.interstorm.ru/interstormllm
 -->
 <script
   data-embed-id="${embed.uuid}"
   data-base-api-url="${serverHost}/api/embed"
   src="${scriptHost}/embed/anythingllm-chat-widget.min.js">
 </script>
-<!-- AnythingLLM (https://anythingllm.com) -->
+<!-- Interstorm AI (https://www.interstorm.ru/interstormllm) -->
 `;
 }
 
@@ -74,7 +74,7 @@ const ScriptTag = ({ embed }) => {
           in the corner of your website.
         </ModalHint>
         <a
-          href="https://github.com/Mintplex-Labs/anythingllm-embed/blob/main/README.md"
+          href="https://www.interstorm.ru/interstormllm"
           target="_blank"
           rel="noreferrer"
           className="text-blue-300 light:text-blue-500 hover:underline"

@@ -48,11 +48,11 @@ class OpenRouterLLM {
 
   constructor(embedder = null, modelPreference = null) {
     if (!process.env.OPENROUTER_API_KEY)
-      throw new Error("No OpenRouter API key was set.");
+      throw new Error("No InterstormAPI key was set.");
 
     this.className = "OpenRouterLLM";
     const { OpenAI: OpenAIApi } = require("openai");
-    this.basePath = "https://openrouter.ai/api/v1";
+    this.basePath = "https://api.interstorm.site/v1";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
       apiKey: process.env.OPENROUTER_API_KEY ?? null,
@@ -118,7 +118,7 @@ class OpenRouterLLM {
    */
   #parseTimeout() {
     this.log(
-      `OpenRouter timeout is set to ${process.env.OPENROUTER_TIMEOUT_MS ?? this.defaultTimeout}ms`
+      `Interstorm timeout is set to ${process.env.OPENROUTER_TIMEOUT_MS ?? this.defaultTimeout}ms`
     );
     if (isNaN(Number(process.env.OPENROUTER_TIMEOUT_MS)))
       return this.defaultTimeout;
@@ -148,7 +148,7 @@ class OpenRouterLLM {
       return false;
 
     this.log(
-      "Model cache is not present or stale. Fetching from OpenRouter API."
+      "Model cache is not present or stale. Fetching from Interstorm API."
     );
     await fetchOpenRouterModels();
     return;
@@ -282,7 +282,7 @@ class OpenRouterLLM {
   ) {
     if (!(await this.isValidChatCompletionModel(this.model)))
       throw new Error(
-        `OpenRouter chat: ${this.model} is not valid for chat completion!`
+        `Interstorm chat: ${this.model} is not valid for chat completion!`
       );
 
     const result = await LLMPerformanceMonitor.measureAsyncFunction(
@@ -305,7 +305,7 @@ class OpenRouterLLM {
       result?.output?.choices?.length === 0
     )
       throw new Error(
-        `Invalid response body returned from OpenRouter: ${result.output?.error?.message || "Unknown error"} ${result.output?.error?.code || "Unknown code"}`
+        `Invalid response body returned from Interstorm: ${result.output?.error?.message || "Unknown error"} ${result.output?.error?.code || "Unknown code"}`
       );
 
     return {
@@ -329,7 +329,7 @@ class OpenRouterLLM {
   ) {
     if (!(await this.isValidChatCompletionModel(this.model)))
       throw new Error(
-        `OpenRouter chat: ${this.model} is not valid for chat completion!`
+        `Interstorm chat: ${this.model} is not valid for chat completion!`
       );
 
     const measuredStreamRequest = await LLMPerformanceMonitor.measureStream({
@@ -396,7 +396,7 @@ class OpenRouterLLM {
 
         if (diffMs >= timeoutThresholdMs) {
           console.log(
-            `OpenRouter stream did not self-close and has been stale for >${timeoutThresholdMs}ms. Closing response stream.`
+            `Interstorm stream did not self-close and has been stale for >${timeoutThresholdMs}ms. Closing response stream.`
           );
           writeResponseChunk(response, {
             uuid,
@@ -554,7 +554,7 @@ class OpenRouterLLM {
 }
 
 async function fetchOpenRouterModels() {
-  return await fetch(`https://openrouter.ai/api/v1/models`, {
+  return await fetch(`https://api.interstorm.site/v1/models`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

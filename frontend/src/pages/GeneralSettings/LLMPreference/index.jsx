@@ -231,7 +231,7 @@ export const AVAILABLE_LLM_PROVIDERS = [
     requiredConfig: ["PerplexityApiKey"],
   },
   {
-    name: "OpenRouter",
+    name: "Интершторм",
     value: "openrouter",
     logo: OpenRouterLogo,
     options: (settings) => <OpenRouterOptions settings={settings} />,

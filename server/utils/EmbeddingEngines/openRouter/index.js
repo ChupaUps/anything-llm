@@ -7,7 +7,7 @@ class OpenRouterEmbedder {
     this.className = "OpenRouterEmbedder";
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
-      baseURL: "https://openrouter.ai/api/v1",
+      baseURL: "https://api.interstorm.site/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
@@ -91,7 +91,7 @@ class OpenRouterEmbedder {
       };
     });
 
-    if (!!error) throw new Error(`OpenRouter Failed to embed: ${error}`);
+    if (!!error) throw new Error(`Interstorm Failed to embed: ${error}`);
     return data.length > 0 &&
       data.every((embd) => embd.hasOwnProperty("embedding"))
       ? data.map((embd) => embd.embedding)
@@ -100,7 +100,7 @@ class OpenRouterEmbedder {
 }
 
 async function fetchOpenRouterEmbeddingModels() {
-  return await fetch(`https://openrouter.ai/api/v1/embeddings/models`, {
+  return await fetch(`https://api.interstorm.site/v1/embeddings/models`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   })

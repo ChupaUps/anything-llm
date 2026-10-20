@@ -1726,7 +1726,7 @@ async function getGeminiImageModels(apiKey = null) {
  * @returns {Promise<{models: {id: string, name: string, organization: string}[], error: string|null}>}
  */
 async function getOpenRouterImageModels() {
-  const models = await fetch("https://openrouter.ai/api/v1/models")
+  const models = await fetch("https://api.interstorm.site/v1/models")
     .then((res) => res.json())
     .then(({ data = [] }) =>
       data

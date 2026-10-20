@@ -71,11 +71,11 @@ const PROVIDERS = [
     description: "Generate images locally on your own machine using llmman.",
   },
   {
-    name: "OpenRouter",
+    name: "Интершторм",
     value: "openrouter",
     logo: OpenRouterLogo,
     options: (settings) => <OpenRouterOptions settings={settings} />,
-    description: "Generate images from image models on OpenRouter.",
+    description: "Generate images from image models on Interstorm.",
   },
 ];
 

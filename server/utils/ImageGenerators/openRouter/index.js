@@ -2,19 +2,19 @@ const { BaseImageGenerator } = require("../base");
 
 class OpenRouterImageGenerator extends BaseImageGenerator {
   _extractImageBuffer(dataUrl) {
-    if (!dataUrl) throw new Error("OpenRouter returned no image data.");
+    if (!dataUrl) throw new Error("Interstorm returned no image data.");
     return Buffer.from(dataUrl.split(",").pop(), "base64");
   }
 
   constructor() {
     if (!process.env.IMAGE_GEN_OPENROUTER_API_KEY)
-      throw new Error("No OpenRouter image generation API key was set.");
+      throw new Error("No Interstorm image generation API key was set.");
     if (!process.env.IMAGE_GEN_MODEL_PREF)
-      throw new Error("No OpenRouter image generation model was set.");
+      throw new Error("No Interstorm image generation model was set.");
     const { OpenAI: OpenAIApi } = require("openai");
     super({
       client: new OpenAIApi({
-        baseURL: "https://openrouter.ai/api/v1",
+        baseURL: "https://api.interstorm.site/v1",
         apiKey: process.env.IMAGE_GEN_OPENROUTER_API_KEY,
         defaultHeaders: {
           "HTTP-Referer": "https://anythingllm.com",
