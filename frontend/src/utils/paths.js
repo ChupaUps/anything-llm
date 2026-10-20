@@ -1,5 +1,7 @@
 import { API_BASE } from "./constants";
 
+const PRODUCT_PAGE = "https://www.interstorm.ru/interstormllm";
+
 /**
  * Check if a href matches the current pathname.
  * Matches exactly or as a parent path (e.g. /settings/model-routers matches /settings/model-routers/1).
@@ -54,23 +56,29 @@ export default {
       return "/onboarding/data-handling";
     },
   },
-  github: () => {
-    return "https://github.com/Mintplex-Labs/anything-llm";
+  // Single source of truth for every outbound brand link. Nothing here should
+  // ever point at Mintplex Labs infrastructure.
+  site: () => {
+    return "https://interstorm.ru/";
   },
-  discord: () => {
-    return "https://discord.com/invite/6UyHPeGZAC";
+  product: () => {
+    return PRODUCT_PAGE;
   },
-  docs: (path = "") => {
-    return `https://docs.anythingllm.com${path}`;
+  communityChat: () => {
+    return "https://t.me/chupritski";
+  },
+  // Legacy name kept so existing call sites resolve to our own docs surface.
+  docs: () => {
+    return PRODUCT_PAGE;
   },
   chatModes: () => {
-    return "https://docs.anythingllm.com/features/chat-modes";
+    return PRODUCT_PAGE;
   },
-  mailToMintplex: () => {
-    return "mailto:team@mintplexlabs.com";
+  mailToSupport: () => {
+    return "mailto:hello@interstorm.ru";
   },
   hosting: () => {
-    return "https://my.mintplexlabs.com/aio-checkout?product=anythingllm";
+    return PRODUCT_PAGE;
   },
   workspace: {
     chat: (slug, options = {}) => {
@@ -210,20 +218,18 @@ export default {
   },
   communityHub: {
     website: () => {
-      return import.meta.env.DEV
-        ? `http://localhost:5173`
-        : `https://hub.anythingllm.com`;
+      return PRODUCT_PAGE;
     },
     /**
      * View more items of a given type on the community hub.
      * @param {string} type - The type of items to view more of. Should be kebab-case.
      * @returns {string} The path to view more items of the given type.
      */
-    viewMoreOfType: function (type) {
-      return `${this.website()}/list/${type}`;
+    viewMoreOfType: function () {
+      return PRODUCT_PAGE;
     },
-    viewItem: function (type, id) {
-      return `${this.website()}/i/${type}/${id}`;
+    viewItem: function () {
+      return PRODUCT_PAGE;
     },
     trending: () => {
       return `/settings/community-hub/trending`;
@@ -234,22 +240,20 @@ export default {
     importItem: (importItemId) => {
       return `/settings/community-hub/import-item${importItemId ? `?id=${importItemId}` : ""}`;
     },
-    profile: function (username) {
-      if (username) return `${this.website()}/u/${username}`;
-      return `${this.website()}/me`;
+    profile: function () {
+      return PRODUCT_PAGE;
     },
     noPrivateItems: () => {
-      return "https://docs.anythingllm.com/community-hub/faq#no-private-items";
+      return PRODUCT_PAGE;
     },
   },
 
-  // TODO: Migrate all docs.anythingllm.com links to the new docs.
   documentation: {
     mobileIntroduction: () => {
-      return "https://docs.anythingllm.com/mobile/overview";
+      return PRODUCT_PAGE;
     },
     contextWindows: () => {
-      return "https://docs.anythingllm.com/chatting-with-documents/introduction#you-exceed-the-context-window---what-now";
+      return PRODUCT_PAGE;
     },
   },
 

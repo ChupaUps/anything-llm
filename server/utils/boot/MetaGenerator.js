@@ -27,8 +27,8 @@ class MetaGenerator {
   #customConfig = null;
 
   #defaultManifest = {
-    name: "AnythingLLM",
-    short_name: "AnythingLLM",
+    name: "Interstorm-AI",
+    short_name: "Interstorm-AI",
     display: "standalone",
     orientation: "portrait",
     start_url: "/",
@@ -59,21 +59,21 @@ class MetaGenerator {
       {
         tag: "title",
         props: null,
-        content: "AnythingLLM | Your personal LLM trained on anything",
+        content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
       },
 
       {
         tag: "meta",
         props: {
           name: "title",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
       {
         tag: "meta",
         props: {
           description: "title",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
 
@@ -81,28 +81,27 @@ class MetaGenerator {
       { tag: "meta", props: { property: "og:type", content: "website" } },
       {
         tag: "meta",
-        props: { property: "og:url", content: "https://anythingllm.com" },
+        props: { property: "og:url", content: "https://www.interstorm.ru/interstormllm" },
       },
       {
         tag: "meta",
         props: {
           property: "og:title",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
       {
         tag: "meta",
         props: {
           property: "og:description",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
       {
         tag: "meta",
         props: {
           property: "og:image",
-          content:
-            "https://raw.githubusercontent.com/Mintplex-Labs/anything-llm/master/images/promo.png",
+          content: "/favicon.png",
         },
       },
 
@@ -113,28 +112,27 @@ class MetaGenerator {
       },
       {
         tag: "meta",
-        props: { property: "twitter:url", content: "https://anythingllm.com" },
+        props: { property: "twitter:url", content: "https://www.interstorm.ru/interstormllm" },
       },
       {
         tag: "meta",
         props: {
           property: "twitter:title",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
       {
         tag: "meta",
         props: {
           property: "twitter:description",
-          content: "AnythingLLM | Your personal LLM trained on anything",
+          content: "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
         },
       },
       {
         tag: "meta",
         props: {
           property: "twitter:image",
-          content:
-            "https://raw.githubusercontent.com/Mintplex-Labs/anything-llm/master/images/promo.png",
+          content: "/favicon.png",
         },
       },
 
@@ -245,7 +243,7 @@ class MetaGenerator {
             props: null,
             content:
               customTitle ??
-              "AnythingLLM | Your personal LLM trained on anything",
+              "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
           };
         }
         // Override meta title
@@ -256,7 +254,7 @@ class MetaGenerator {
               name: "title",
               content:
                 customTitle ??
-                "AnythingLLM | Your personal LLM trained on anything",
+                "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
             },
           };
         }
@@ -268,7 +266,7 @@ class MetaGenerator {
               property: "og:title",
               content:
                 customTitle ??
-                "AnythingLLM | Your personal LLM trained on anything",
+                "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
             },
           };
         }
@@ -280,7 +278,7 @@ class MetaGenerator {
               property: "twitter:title",
               content:
                 customTitle ??
-                "AnythingLLM | Your personal LLM trained on anything",
+                "Интершторм-ИИ | ИИ-партнер для решения рабочих задач",
             },
           };
         }
@@ -346,7 +344,7 @@ class MetaGenerator {
       const { SystemSettings } = require("../../models/systemSettings");
       const manifestName = await SystemSettings.getValueOrFallback(
         { label: "meta_page_title" },
-        "AnythingLLM"
+        "Interstorm-AI"
       );
       const faviconURL = await SystemSettings.getValueOrFallback(
         { label: "meta_page_favicon" },

@@ -1,7 +1,4 @@
-import {
-  COMPLETE_QUESTIONNAIRE,
-  ONBOARDING_SURVEY_URL,
-} from "@/utils/constants";
+import { COMPLETE_QUESTIONNAIRE } from "@/utils/constants";
 import paths from "@/utils/paths";
 import { CheckCircle } from "@phosphor-icons/react";
 import React, { useState, useEffect, useRef } from "react";
@@ -10,36 +7,12 @@ import { useTranslation } from "react-i18next";
 import Workspace from "@/models/workspace";
 
 async function sendQuestionnaire({ email, useCase, comment }) {
+  // Telemetry is disabled for this deployment: answers are never sent off this
+  // instance. The questionnaire is only used to gate the onboarding step.
   if (import.meta.env.DEV) {
     console.log("sendQuestionnaire", { email, useCase, comment });
-    return;
   }
-
-  const data = JSON.stringify({
-    email,
-    useCase,
-    comment,
-    sourceId: "0VRjqHh6Vukqi0x0Vd0n/m8JuT7k8nOz",
-  });
-
-  if (!navigator.sendBeacon) {
-    console.log("navigator.sendBeacon not supported, falling back to fetch");
-    return fetch(ONBOARDING_SURVEY_URL, {
-      method: "POST",
-      body: data,
-    })
-      .then(() => {
-        window.localStorage.setItem(COMPLETE_QUESTIONNAIRE, true);
-        console.log(`✅ Questionnaire responses sent.`);
-      })
-      .catch((error) => {
-        console.error(`sendQuestionnaire`, error.message);
-      });
-  }
-
-  navigator.sendBeacon(ONBOARDING_SURVEY_URL, data);
   window.localStorage.setItem(COMPLETE_QUESTIONNAIRE, true);
-  console.log(`✅ Questionnaire responses sent.`);
 }
 
 export default function Survey({ setHeader, setForwardBtn, setBackBtn }) {
@@ -129,10 +102,10 @@ export default function Survey({ setHeader, setForwardBtn, setBackBtn }) {
               {t("onboarding.survey.thankYou")}
             </p>
             <a
-              href={paths.mailToMintplex()}
+              href={paths.mailToSupport()}
               className="text-sky-400 underline text-xs"
             >
-              team@mintplexlabs.com
+              hello@interstorm.ru
             </a>
           </div>
         </div>

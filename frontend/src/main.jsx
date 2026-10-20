@@ -293,17 +293,6 @@ const router = createBrowserRouter([
         },
       },
       {
-        path: "/settings/browser-extension",
-        lazy: async () => {
-          const { default: GeneralBrowserExtension } = await import(
-            "@/pages/GeneralSettings/BrowserExtensionApiKey"
-          );
-          return {
-            element: <ManagerRoute Component={GeneralBrowserExtension} />,
-          };
-        },
-      },
-      {
         path: "/settings/workspace-chats",
         lazy: async () => {
           const { default: GeneralChats } = await import(
@@ -356,46 +345,6 @@ const router = createBrowserRouter([
           return {
             element: <AdminRoute Component={LiveDocumentSyncManage} />,
           };
-        },
-      },
-      {
-        path: "/settings/community-hub/trending",
-        lazy: async () => {
-          const { default: CommunityHubTrending } = await import(
-            "@/pages/GeneralSettings/CommunityHub/Trending"
-          );
-          return { element: <AdminRoute Component={CommunityHubTrending} /> };
-        },
-      },
-      {
-        path: "/settings/community-hub/authentication",
-        lazy: async () => {
-          const { default: CommunityHubAuthentication } = await import(
-            "@/pages/GeneralSettings/CommunityHub/Authentication"
-          );
-          return {
-            element: <AdminRoute Component={CommunityHubAuthentication} />,
-          };
-        },
-      },
-      {
-        path: "/settings/community-hub/import-item",
-        lazy: async () => {
-          const { default: CommunityHubImportItem } = await import(
-            "@/pages/GeneralSettings/CommunityHub/ImportItem"
-          );
-          return {
-            element: <AdminRoute Component={CommunityHubImportItem} />,
-          };
-        },
-      },
-      {
-        path: "/settings/mobile-connections",
-        lazy: async () => {
-          const { default: MobileConnections } = await import(
-            "@/pages/GeneralSettings/MobileConnections"
-          );
-          return { element: <ManagerRoute Component={MobileConnections} /> };
         },
       },
       {

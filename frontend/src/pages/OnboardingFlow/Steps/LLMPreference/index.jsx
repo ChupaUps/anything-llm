@@ -225,7 +225,7 @@ const LLMS = [
       "Run powerful and internet-connected models hosted by Perplexity AI.",
   },
   {
-    name: "Interstorm",
+    name: "Интершторм",
     value: "openrouter",
     logo: OpenRouterLogo,
     options: (settings) => <OpenRouterOptions settings={settings} />,
@@ -367,7 +367,8 @@ export default function LLMPreference({
   const [settings, setSettings] = useState(null);
   const formRef = useRef(null);
   const hiddenSubmitButtonRef = useRef(null);
-  const isHosted = window.location.hostname.includes("useanything.com");
+  // Self-hosted deployment only; no cloud-hosted upstream variant.
+  const isHosted = false;
   const navigate = useNavigate();
 
   const TITLE = t("onboarding.llm.title");
@@ -408,7 +409,7 @@ export default function LLMPreference({
     const data = {};
     const formData = new FormData(form);
     data.LLMProvider = selectedLLM;
-    // Default to AnythingLLM embedder and LanceDB
+    // Default to the built-in embedder and LanceDB
     data.EmbeddingEngine = "native";
     data.VectorDB = "lancedb";
     for (var [key, value] of formData.entries()) data[key] = value;

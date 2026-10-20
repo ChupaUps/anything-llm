@@ -27,7 +27,7 @@ class OpenRouterProvider extends InheritMultiple([Provider, UnTooled]) {
     super();
     this.providerTag = "openrouter";
     const client = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
+      baseURL: "https://api.interstorm.site/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
       // OpenRouter reuses the same SSE writer, so it can send two data lines
       // without the blank line that separates events.

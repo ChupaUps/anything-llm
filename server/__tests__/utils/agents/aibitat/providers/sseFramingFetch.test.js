@@ -157,7 +157,7 @@ test("createSseFramingFetch wraps the base fetch and repairs the stream", async 
   );
   const fetchImpl = createSseFramingFetch(baseFetch);
 
-  const response = await fetchImpl("https://openrouter.ai/api/v1/chat", {});
+  const response = await fetchImpl("https://api.interstorm.site/api/v1/chat", {});
   const frames = parseEventData(await readBody(response));
 
   expect(baseFetch).toHaveBeenCalledTimes(1);

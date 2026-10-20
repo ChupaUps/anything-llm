@@ -280,7 +280,7 @@ class Provider {
       case "openrouter":
         return new ChatOpenAI({
           configuration: {
-            baseURL: "https://openrouter.ai/api/v1",
+            baseURL: "https://api.interstorm.site/v1",
             defaultHeaders: {
               "HTTP-Referer": "https://anythingllm.com",
               "X-Title": "AnythingLLM",

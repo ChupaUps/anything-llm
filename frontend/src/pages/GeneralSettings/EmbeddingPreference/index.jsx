@@ -44,12 +44,12 @@ import ProviderSearchMenu from "@/components/lib/ProviderSearchMenu";
 
 const EMBEDDERS = [
   {
-    name: "AnythingLLM Embedder",
+    name: "Interstorm AI Embedder",
     value: "native",
     logo: AnythingLLMIcon,
     options: (settings) => <NativeEmbeddingOptions settings={settings} />,
     description:
-      "Use the built-in embedding provider for AnythingLLM. Zero setup!",
+      "Use the built-in embedding provider for Interstorm AI. Zero setup!",
   },
   {
     name: "OpenAI",
@@ -103,11 +103,11 @@ const EMBEDDERS = [
       "Run embedding models locally on your own machine using Lemonade.",
   },
   {
-    name: "OpenRouter",
+    name: "Интершторм",
     value: "openrouter",
     logo: OpenRouterLogo,
     options: (settings) => <OpenRouterOptions settings={settings} />,
-    description: "Run embedding models from OpenRouter.",
+    description: "Run embedding models from Interstorm.",
   },
   {
     name: "LiteLLM",

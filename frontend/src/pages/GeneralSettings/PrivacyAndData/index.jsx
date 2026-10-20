@@ -93,33 +93,20 @@ function TelemetryLogs({ settings }) {
         </div>
         <div className="flex flex-col items-left space-y-2">
           <p className="text-theme-text-secondary text-xs rounded-lg w-96">
-            All events do not record IP-address and contain{" "}
-            <b>no identifying</b> content, settings, chats, or other non-usage
-            based information. To see the list of event tags collected you can
-            look on{" "}
-            <a
-              href="https://github.com/search?q=repo%3AMintplex-Labs%2Fanything-llm%20.sendTelemetry(&type=code"
-              className="underline text-blue-400"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub here
-            </a>
-            .
+            В этой сборке анонимная телеметрия <b>отключена по умолчанию</b>:
+            содержимое чатов, документов, настроек и иные данные не отправляются
+            на внешние серверы. События телеметрии не содержат IP-адреса и
+            неидентифицирующую информацию.
           </p>
           <p className="text-theme-text-secondary text-xs rounded-lg w-96">
-            As an open-source project we respect your right to privacy. We are
-            dedicated to building the best solution for integrating AI and
-            documents privately and securely. If you do decide to turn off
-            telemetry all we ask is to consider sending us feedback and thoughts
-            so that we can continue to improve AnythingLLM for you.{" "}
+            По любым вопросам о работе с данными пишите на{" "}
             <a
-              href="mailto:team@mintplexlabs.com"
+              href="mailto:hello@interstorm.ru"
               className="underline text-blue-400"
               target="_blank"
               rel="noreferrer"
             >
-              team@mintplexlabs.com
+              hello@interstorm.ru
             </a>
             .
           </p>
