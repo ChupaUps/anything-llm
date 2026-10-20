@@ -387,12 +387,34 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
 
   if (data.type === "rechartVisualize") {
     return setChatHistory((prev) => {
+      const history = prev.filter((msg) => !!msg.content);
+      const content = data.content;
+      const turnId =
+        content && typeof content === "object" ? content.turnId : null;
+
+      // Every chart in a turn resends the whole collection with the same turn
+      // id, so the live UI updates one message instead of appending N cards.
+      if (turnId) {
+        const index = history.findIndex(
+          (msg) =>
+            msg.type === "rechartVisualize" &&
+            msg.content &&
+            typeof msg.content === "object" &&
+            msg.content.turnId === turnId
+        );
+        if (index !== -1) {
+          const updated = [...history];
+          updated[index] = { ...updated[index], content };
+          return updated;
+        }
+      }
+
       return [
-        ...prev.filter((msg) => !!msg.content),
+        ...history,
         {
           type: "rechartVisualize",
           uuid: v4(),
-          content: data.content,
+          content,
           role: "assistant",
           sources: [],
           closed: true,

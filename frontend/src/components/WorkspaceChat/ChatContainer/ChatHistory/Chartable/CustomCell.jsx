@@ -1,5 +1,26 @@
-export default function CustomCell({ ...props }) {
-  const { root, depth, x, y, width, height, index, colors, name } = props;
+import { formatValue, truncateText } from "./chart-utils.js";
+
+/**
+ * Treemap cell. Recharts injects the layout props for every node, while
+ * `colors` and `model` are forwarded from the chart for palette and units.
+ */
+export default function CustomCell({
+  colors = [],
+  model,
+  depth,
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  index = 0,
+  name,
+  value,
+}) {
+  const isLeaf = depth === 1;
+  const fill = colors[index % (colors.length || 1)] || "#3b82f6";
+  const label = truncateText(name, Math.max(6, Math.floor(width / 8)));
+  const showValue = height >= 52 && width >= 72;
+
   return (
     <g>
       <rect
@@ -8,29 +29,32 @@ export default function CustomCell({ ...props }) {
         width={width}
         height={height}
         style={{
-          fill:
-            depth < 2
-              ? colors[Math.floor((index / root.children.length) * 6)]
-              : "#ffffff00",
-          stroke: "#fff",
-          strokeWidth: 2 / (depth + 1e-10),
-          strokeOpacity: 1 / (depth + 1e-10),
+          fill: isLeaf ? fill : "transparent",
+          stroke: "var(--theme-bg-primary)",
+          strokeWidth: isLeaf ? 2 : 0,
         }}
       />
-      {depth === 1 ? (
+      {isLeaf && width >= 56 && height >= 28 ? (
         <text
-          x={x + width / 2}
-          y={y + height / 2 + 7}
-          textAnchor="middle"
-          fill="#fff"
-          fontSize={14}
+          x={x + 8}
+          y={y + 19}
+          fill="#ffffff"
+          fontSize={12}
+          fontWeight={600}
+          style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)" }}
         >
-          {name}
+          {label}
         </text>
       ) : null}
-      {depth === 1 ? (
-        <text x={x + 4} y={y + 18} fill="#fff" fontSize={16} fillOpacity={0.9}>
-          {index + 1}
+      {isLeaf && showValue ? (
+        <text
+          x={x + 8}
+          y={y + 36}
+          fill="rgba(255,255,255,0.85)"
+          fontSize={11}
+          style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)" }}
+        >
+          {formatValue(value, model)}
         </text>
       ) : null}
     </g>
