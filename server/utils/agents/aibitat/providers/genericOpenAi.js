@@ -13,6 +13,7 @@ const { toValidNumber } = require("../../../http/index.js");
 const { getAnythingLLMUserAgent } = require("../../../../endpoints/utils");
 const { GenericOpenAiLLM } = require("../../../AiProviders/genericOpenAi");
 const { attachmentToContentBlock } = require("../../../helpers/attachments");
+const { createSseFramingFetch } = require("./helpers/sseFramingFetch.js");
 
 /**
  * The agent provider for the Generic OpenAI provider.
@@ -30,6 +31,9 @@ class GenericOpenAiProvider extends InheritMultiple([Provider, UnTooled]) {
     const client = new OpenAI({
       baseURL: process.env.GENERIC_OPEN_AI_BASE_PATH,
       apiKey: process.env.GENERIC_OPEN_AI_API_KEY ?? null,
+      // OpenAI-compatible gateways can emit malformed SSE framing, which the
+      // SDK rejects before tool calls ever reach our parser.
+      fetch: createSseFramingFetch(),
       defaultHeaders: {
         "User-Agent": getAnythingLLMUserAgent(),
         ...GenericOpenAiLLM.parseCustomHeaders(),
