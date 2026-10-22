@@ -16,6 +16,18 @@ if [ -z "$STORAGE_DIR" ]; then
     echo "================================================================"
 fi
 
+# AnythingLLM stores all relational data in PostgreSQL. The URL is normally
+# provided by docker/.env (both as env_file and as /app/server/.env).
+if [ -z "$DATABASE_URL" ] && ! grep -q '^DATABASE_URL=' /app/server/.env 2>/dev/null; then
+    echo "==============================================================="
+    echo "⚠️  WARNING: DATABASE_URL is not set!"
+    echo ""
+    echo "AnythingLLM requires PostgreSQL. Add DATABASE_URL (and the matching"
+    echo "POSTGRES_* credentials) to docker/.env before starting the stack."
+    echo "See docker/.env.example for a ready-to-use template."
+    echo "==============================================================="
+fi
+
 {
   cd /app/server/ &&
     # Disable Prisma CLI telemetry (https://www.prisma.io/docs/orm/tools/prisma-cli#how-to-opt-out-of-data-collection)

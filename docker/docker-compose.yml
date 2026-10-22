@@ -4,7 +4,32 @@ networks:
   anything-llm:
     driver: bridge
 
+volumes:
+  pgdata:
+
 services:
+  postgres:
+    container_name: anythingllm-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-anythingllm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in docker/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-anythingllm}
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-anythingllm} -d ${POSTGRES_DB:-anythingllm}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - anything-llm
+
   anything-llm:
     container_name: anythingllm
     build:
@@ -25,6 +50,9 @@ services:
       - "3001:3001"
     env_file:
       - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - anything-llm
     extra_hosts:

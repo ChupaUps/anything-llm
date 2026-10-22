@@ -24,6 +24,8 @@ storage/direct-uploads
 logs/server.log
 *.db
 *.db-journal
+storage/backups/*
+storage/legacy-wal-*
 storage/lancedb
 public/
 __tests__/*/**/models/

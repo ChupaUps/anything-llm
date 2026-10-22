@@ -2,6 +2,10 @@
 
 This guide will help you set up and use Prisma for the project. Prisma is a powerful ORM for Node.js and TypeScript, helping developers build faster and make fewer errors. Follow the guide to understand how to use Prisma and the scripts available in the project to manage the Prisma setup.
 
+> The datasource is PostgreSQL and the connection string comes from `DATABASE_URL`.
+> Live migrations live in `server/prisma/migrations`; the historical SQLite migrations
+> are archived in `server/prisma/migrations-sqlite` and are never applied.
+
 ## Setting Up Prisma
 
 To get started with setting up Prisma, you should run the setup script from the project root directory:
@@ -20,7 +24,7 @@ In the project root's `package.json`, there are several scripts set up to help y
 - **prisma:migrate**: Runs the migrations to ensure the database is in sync with the schema.
 - **prisma:seed**: Seeds the database with initial data.
 - **prisma:setup**: A convenience script that runs `prisma:generate`, `prisma:migrate`, and `prisma:seed` in sequence.
-- **sqlite:migrate**: (To be run from the `server` directory) This script is for users transitioning from the old SQLite custom ORM setup to Prisma and will migrate all existing data over to Prisma. If you're a new user, your setup will already use Prisma.
+- **migrate:sqlite2pg**: (To be run from the root or `server` directory) One-time import of a legacy SQLite database (`server/storage/anythingllm.db`) into PostgreSQL. Supports `--force` to replace existing data.
 
 To run any of these scripts, use `yarn` followed by the script name from the project root directory. For example:
 
@@ -44,4 +48,4 @@ These commands should be run from the `server` directory, where the Prisma schem
 - Always make sure to run scripts from the root level to avoid path issues.
 - Before running migrations, ensure that the Prisma schema is correctly defined to prevent data loss or corruption.
 - If you are adding a new feature or making changes that require a change in the database schema, create a new migration rather than editing existing migrations.
-- For users transitioning from the old SQLite ORM, navigate to the `server` directory and run the `sqlite:migrate` script to smoothly transition to Prisma. If you're setting up the project fresh, this step is unnecessary as the setup will already be using Prisma.
+- For users upgrading from a SQLite based installation, keep `server/storage/anythingllm.db` in place and run `yarn migrate:sqlite2pg` once `DATABASE_URL` points at PostgreSQL.

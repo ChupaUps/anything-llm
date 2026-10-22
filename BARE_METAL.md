@@ -14,6 +14,7 @@ Here you can find the scripts and known working process to run AnythingLLM outsi
 
 - NodeJS v18
 - Yarn
+- PostgreSQL 14 or newer (AnythingLLM keeps all relational data there)
 
 
 ## Getting started
@@ -28,6 +29,7 @@ Here you can find the scripts and known working process to run AnythingLLM outsi
 4. Ensure that the `server/.env` file has _at least_ these keys to start. These values will persist and this file will be automatically written and managed after your first successful boot.
 ```
 STORAGE_DIR="/your/absolute/path/to/server/storage"
+DATABASE_URL="postgresql://user:password@127.0.0.1:5432/anythingllm?schema=public"
 ```
 
 5. Edit the `frontend/.env` file for the `VITE_API_BASE` to now be set to `/api`. This is documented in the .env for which one you should use.
@@ -47,11 +49,17 @@ AnythingLLM is comprised of three main sections. The `frontend`, `server`, and `
 2. Copy `frontend/dist` to `server/public` - `cp -R frontend/dist server/public`.
 This should create a folder in `server` named `public` which contains a top level `index.html` file and various other files/folders.
 
-3. Migrate and prepare your database file.
+3. Migrate and prepare your database.
 ```
 cd server && npx prisma generate --schema=./prisma/schema.prisma
 cd server && npx prisma migrate deploy --schema=./prisma/schema.prisma
 ```
+
+> [!NOTE]
+> Upgrading from a SQLite based installation? Keep the old `server/storage/anythingllm.db`
+> in place, finish the steps below and run `yarn migrate:sqlite2pg` from the repo root
+> (or `yarn migrate:sqlite2pg` inside `server/`) to copy its data into PostgreSQL.
+> The importer shells out to the `sqlite3` CLI, so make sure it is installed and on `PATH`.
 
 4. Boot the server in production
 `cd server && NODE_ENV=production node index.js &`

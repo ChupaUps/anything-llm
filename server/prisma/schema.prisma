@@ -2,17 +2,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Uncomment the following lines and comment out the SQLite datasource block above to use PostgreSQL
-// Make sure to set the correct DATABASE_URL in your .env file
-// After swapping run `yarn prisma:setup` from the root directory to migrate the database
-//
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
+// AnythingLLM runs on PostgreSQL. The connection string is provided via
+// DATABASE_URL (see docker/.env.example for the Docker Compose deployment).
+// Historical SQLite migrations are kept in `prisma/migrations-sqlite` for
+// reference only and are no longer applied.
 datasource db {
-  provider = "sqlite"
-  url      = "file:../storage/anythingllm.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model api_keys {

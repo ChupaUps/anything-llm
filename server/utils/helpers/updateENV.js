@@ -1589,6 +1589,11 @@ function dumpENV() {
     "STORAGE_DIR",
     "SERVER_PORT",
     "COLLECTOR_PORT",
+    // PostgreSQL connection - must survive ENV dumps triggered by the settings UI
+    "DATABASE_URL",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_DB",
     // For persistent data encryption
     "SIG_KEY",
     "SIG_SALT",
