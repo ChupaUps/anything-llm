@@ -182,7 +182,7 @@ async function findInWorkspaceChats(storageFilename, { user, isMultiUser }) {
   // DB-level filter so we don't load every chat into memory.
   const chats = await WorkspaceChats.where({
     workspaceId: { in: workspaceIds },
-    response: { contains: storageFilename },
+    response: { contains: storageFilename, mode: "insensitive" },
   });
 
   for (const chat of chats) {
@@ -211,7 +211,7 @@ async function findInWorkspaceChats(storageFilename, { user, isMultiUser }) {
 async function findInScheduledJobRuns(storageFilename) {
   const runs = await ScheduledJobRun.where({
     status: "completed",
-    result: { contains: storageFilename },
+    result: { contains: storageFilename, mode: "insensitive" },
   });
 
   for (const run of runs) {

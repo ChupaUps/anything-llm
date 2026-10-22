@@ -10,7 +10,7 @@ Use the Dockerized version of AnythingLLM for a much faster and complete startup
 > you will be storing (documents, vectors, models, etc). Minimum 10GB recommended.
 
 - `docker` installed on your machine
-- `yarn` and `node` on your machine
+- a PostgreSQL 14+ database (the provided `docker-compose.yml` starts one for you)
 - access to an LLM running locally or remotely
 
 \*AnythingLLM by default uses a built-in vector database powered by [LanceDB](https://github.com/lancedb/lancedb)
@@ -34,6 +34,11 @@ Use the Dockerized version of AnythingLLM for a much faster and complete startup
 > [!TIP]
 > It is best to mount the containers storage volume to a folder on your host machine
 > so that you can pull in future updates without deleting your existing data!
+
+> [!IMPORTANT]
+> This build requires PostgreSQL. Add `-e DATABASE_URL=postgresql://user:password@host:5432/db?schema=public`
+> to the `docker run` examples below (or use `docker/docker-compose.yml`, which starts a database for you).
+> See the [Database (PostgreSQL)](#database-postgresql) section for details.
 
 Pull in the latest image from docker. Supports both `amd64` and `arm64` CPU architectures.
 
@@ -287,12 +292,47 @@ health output says `gpu` for any Vulkan backend, so it does not tell you whether
 ## Build locally from source _not recommended for casual use_
 
 - `git clone` this repo and `cd anything-llm` to get to the root directory.
-- `touch server/storage/anythingllm.db` to create empty SQLite DB file.
 - `cd docker/`
-- `cp .env.example .env` **you must do this before building**
+- `cp .env.example .env` **you must do this before building**, then set `POSTGRES_PASSWORD` and the matching `DATABASE_URL`
 - `docker-compose up -d --build` to build the image - this will take a few moments.
 
 Your docker host will show the image as online once the build process is completed. This will build the app to `http://localhost:3001`.
+
+## Database (PostgreSQL)
+
+> [!IMPORTANT]
+> This build stores all relational data in PostgreSQL, so the `anything-llm`
+> service will not start without a reachable `DATABASE_URL`.
+
+`docker-compose.yml` ships a `postgres` service backed by the `pgdata` volume, plus a
+healthcheck so the app only boots once the database accepts connections. All credentials
+live in `docker/.env`:
+
+```
+POSTGRES_USER=anythingllm
+POSTGRES_PASSWORD=<long random string>
+POSTGRES_DB=anythingllm
+DATABASE_URL=postgresql://anythingllm:<long random string>@postgres:5432/anythingllm?schema=public&connection_limit=10
+```
+
+Backups now have two parts: the `pgdata` volume (relational data) and `server/storage`
+(documents, vector DB, generated files).
+
+### Importing an existing SQLite database
+
+If you are upgrading an installation that still uses `server/storage/anythingllm.db`, the
+data is imported with a one-time command. Stop the app first, then run:
+
+```shell
+docker compose run --rm --entrypoint /bin/bash anything-llm \
+  -c "cd /app/server && yarn migrate:sqlite2pg"
+```
+
+The script applies pending migrations, refuses to touch a non-empty PostgreSQL database
+unless `--force` is passed, copies the data inside a single run and reports row counts.
+The SQLite file itself is left untouched, so it can be used as a rollback copy.
+
+Full operations runbook (in Russian): [POSTGRES.md](./POSTGRES.md) - backups, restores, diagnostics and rollback.
 
 ## Integrations and one-click setups
 

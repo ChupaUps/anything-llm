@@ -90,7 +90,7 @@ async function* activeImageChats(batchSize = 50) {
   let offset = 0;
   while (true) {
     const chats = await WorkspaceChats.where(
-      { include: true, response: { contains: "img-" } },
+      { include: true, response: { contains: "img-", mode: "insensitive" } },
       batchSize,
       { id: "asc" },
       offset
@@ -111,7 +111,7 @@ async function* completedImageRuns(batchSize = 50) {
   let offset = 0;
   while (true) {
     const runs = await ScheduledJobRun.where(
-      { status: "completed", result: { contains: "img-" } },
+      { status: "completed", result: { contains: "img-", mode: "insensitive" } },
       batchSize,
       { id: "asc" },
       {},

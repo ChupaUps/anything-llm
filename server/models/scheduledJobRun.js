@@ -18,9 +18,9 @@ const ScheduledJobRun = {
   /**
    * Claim a new run for a job. At most one in-flight run per job is allowed —
    * if a `queued` or `running` row already exists, this returns null and the
-   * caller should drop the request. The check + insert run inside an
-   * interactive transaction so two concurrent callers cannot both pass;
-   * SQLite serializes writes.
+   * caller should drop the request. The check + insert run inside a serializable
+   * transaction so two concurrent callers cannot both pass. On PostgreSQL both
+   * transactions would otherwise read an empty set under READ COMMITTED.
    *
    * The row is created in `queued` status; the worker transitions it to
    * `running` via markRunning() once it actually begins executing.
@@ -31,23 +31,26 @@ const ScheduledJobRun = {
    */
   start: async function (jobId) {
     try {
-      return await prisma.$transaction(async (tx) => {
-        const existing = await tx.scheduled_job_runs.findFirst({
-          where: {
-            jobId: Number(jobId),
-            status: { in: this.nonTerminalStatuses },
-          },
-          select: { id: true },
-        });
-        if (existing) return null;
+      return await prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.scheduled_job_runs.findFirst({
+            where: {
+              jobId: Number(jobId),
+              status: { in: this.nonTerminalStatuses },
+            },
+            select: { id: true },
+          });
+          if (existing) return null;
 
-        return tx.scheduled_job_runs.create({
-          data: {
-            jobId: Number(jobId),
-            status: this.statuses.queued,
-          },
-        });
-      });
+          return tx.scheduled_job_runs.create({
+            data: {
+              jobId: Number(jobId),
+              status: this.statuses.queued,
+            },
+          });
+        },
+        { isolationLevel: "Serializable" }
+      );
     } catch (error) {
       console.error("Failed to enqueue scheduled job run:", error.message);
       return null;

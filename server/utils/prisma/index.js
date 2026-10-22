@@ -10,16 +10,4 @@ const prisma = new PrismaClient({
   log: logLevels,
 });
 
-// Включаем WAL-режим для SQLite при старте приложения.
-// Это персистентная настройка: она сохраняется в самом файле БД,
-// поэтому достаточно выполнить её один раз.
-prisma
-  .$executeRawUnsafe("PRAGMA journal_mode=WAL;")
-  .then((result) => {
-    console.log("PRAGMA journal_mode result:", result);
-  })
-  .catch((err) => {
-    console.error("Failed to set WAL mode:", err);
-  });
-
 module.exports = prisma;
