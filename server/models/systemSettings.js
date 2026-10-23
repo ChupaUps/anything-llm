@@ -41,6 +41,7 @@ const SystemSettings = {
   publicFields: [
     "footer_data",
     "support_email",
+    "support_contacts",
     "text_splitter_chunk_size",
     "text_splitter_chunk_overlap",
     "max_embed_chunk_size",
@@ -71,6 +72,7 @@ const SystemSettings = {
     "telemetry_id",
     "footer_data",
     "support_email",
+    "support_contacts",
 
     "text_splitter_chunk_size",
     "text_splitter_chunk_overlap",
@@ -115,6 +117,24 @@ const SystemSettings = {
       } catch {
         console.error(`Failed to run validation function on footer_data`);
         return JSON.stringify([]);
+      }
+    },
+    support_contacts: (update) => {
+      try {
+        const parsed =
+          typeof update === "string" ? safeJsonParse(update, {}) : update;
+        const contacts = {};
+        for (const key of ["email", "phone", "messenger"]) {
+          const entry = parsed?.[key] ?? {};
+          contacts[key] = {
+            show: entry.show === true || entry.show === "true",
+            value: typeof entry.value === "string" ? entry.value.trim() : "",
+          };
+        }
+        return JSON.stringify(contacts);
+      } catch {
+        console.error(`Failed to run validation function on support_contacts`);
+        return JSON.stringify({});
       }
     },
     text_splitter_chunk_size: (update) => {
@@ -673,6 +693,31 @@ const SystemSettings = {
     } catch (error) {
       console.error(error.message);
       return fallback;
+    }
+  },
+
+  /**
+   * Returns only the administrator contact channels that are enabled and
+   * filled in. This is safe to serve publicly since it is rendered on the
+   * unauthenticated login page when a user asks to recover a password.
+   * @returns {Promise<{email?: string, phone?: string, messenger?: string}>}
+   */
+  supportContacts: async function () {
+    try {
+      const setting = await this.get({ label: "support_contacts" });
+      const parsed = safeJsonParse(setting?.value, {}) || {};
+      const contacts = {};
+      for (const key of ["email", "phone", "messenger"]) {
+        const entry = parsed[key];
+        if (!entry || entry.show !== true) continue;
+        const value = typeof entry.value === "string" ? entry.value.trim() : "";
+        if (!value) continue;
+        contacts[key] = value;
+      }
+      return contacts;
+    } catch (error) {
+      console.error(error.message);
+      return {};
     }
   },
 

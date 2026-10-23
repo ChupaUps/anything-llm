@@ -355,6 +355,7 @@ function adminEndpoints(app) {
           "custom_app_name",
           "footer_data",
           "support_email",
+          "support_contacts",
           "meta_page_title",
           "meta_page_favicon",
         ];
@@ -385,6 +386,9 @@ function adminEndpoints(app) {
               break;
             case "support_email":
               requestedSettings[label] = setting?.value || null;
+              break;
+            case "support_contacts":
+              requestedSettings[label] = setting?.value || JSON.stringify({});
               break;
             case "text_splitter_chunk_size":
               requestedSettings[label] =
@@ -478,6 +482,7 @@ function adminEndpoints(app) {
             "custom_app_name",
             "footer_data",
             "support_email",
+            "support_contacts",
             "meta_page_title",
             "meta_page_favicon",
           ];

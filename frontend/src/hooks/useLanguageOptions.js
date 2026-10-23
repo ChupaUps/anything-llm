@@ -3,18 +3,18 @@ import { resources as languages } from "@/locales/resources";
 
 export function useLanguageOptions() {
   const supportedLanguages = Object.keys(languages);
-  const languageNames = new Intl.DisplayNames(supportedLanguages, {
+  const languageNames = new Intl.DisplayNames([i18n.resolvedLanguage || "ru"], {
     type: "language",
   });
-  const changeLanguage = (newLang = "en") => {
-    if (!Object.keys(languages).includes(newLang)) return false;
+  const changeLanguage = (newLang = "ru") => {
+    if (!supportedLanguages.includes(newLang)) return false;
     i18n.changeLanguage(newLang);
   };
 
   return {
-    currentLanguage: i18n.language || "en",
+    currentLanguage: i18n.resolvedLanguage || "ru",
     supportedLanguages,
-    getLanguageName: (lang = "en") => languageNames.of(lang),
+    getLanguageName: (lang = "ru") => languageNames.of(lang),
     changeLanguage,
   };
 }

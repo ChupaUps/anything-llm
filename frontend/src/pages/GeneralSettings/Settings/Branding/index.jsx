@@ -6,6 +6,7 @@ import CustomLogo from "../components/CustomLogo";
 import { useTranslation } from "react-i18next";
 import CustomAppName from "../components/CustomAppName";
 import CustomSiteSettings from "../components/CustomSiteSettings";
+import SupportContacts from "../components/SupportContacts";
 
 export default function BrandingSettings() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ export default function BrandingSettings() {
           <CustomLogo />
           <FooterCustomization />
           <SupportEmail />
+          <SupportContacts />
           <CustomSiteSettings />
         </div>
       </div>

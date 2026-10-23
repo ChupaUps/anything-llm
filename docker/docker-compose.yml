@@ -11,6 +11,7 @@ services:
   postgres:
     container_name: anythingllm-postgres
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-anythingllm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in docker/.env}
@@ -32,6 +33,7 @@ services:
 
   anything-llm:
     container_name: anythingllm
+    restart: unless-stopped
     build:
       context: ../.
       dockerfile: ./docker/Dockerfile

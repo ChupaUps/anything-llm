@@ -132,12 +132,18 @@ const TRANSLATIONS = {
     },
     "sign-in":
       "Enter your username and password to access your {{appName}} instance.",
-    "password-reset": {
-      title: "Password Reset",
+    contacts: {
+      title: "Password recovery",
+      cta: "contact the administrator",
       description:
-        "Provide the necessary information below to reset your password.",
-      "recovery-codes": "Recovery Codes",
-      "back-to-login": "Back to Login",
+        "To reset your password, contact your platform administrator using any of the contacts below.",
+      "not-configured": "The administrator has not added contact details yet.",
+      close: "Back to login",
+      channels: {
+        email: "Email",
+        phone: "Phone",
+        messenger: "Messenger",
+      },
     },
   },
   "main-page": {
@@ -890,6 +896,25 @@ const TRANSLATIONS = {
         title: "Support Email",
         description:
           "Set the support email address that should be accessible by users when they need help.",
+      },
+      "support-contacts": {
+        title: "Password Recovery Contacts",
+        description:
+          'Contacts shown to users when they click "Forgot password" on the login page. Enable and fill in only the channels you want to display.',
+        show: "Show on login page",
+        save: "Save",
+        "save-success": "Password recovery contacts updated.",
+        "save-error": "Failed to update password recovery contacts: {{error}}",
+        channels: {
+          email: "Email",
+          phone: "Phone",
+          messenger: "Messenger",
+        },
+        placeholders: {
+          email: "admin@example.com",
+          phone: "+7 900 000-00-00",
+          messenger: "Telegram: @admin",
+        },
       },
       "app-name": {
         title: "Name",

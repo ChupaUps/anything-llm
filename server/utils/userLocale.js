@@ -16,7 +16,7 @@
  */
 
 const DEFAULT_TIMEZONE = "UTC";
-const DEFAULT_LANG = "en";
+const DEFAULT_LANG = "ru";
 
 class _UserMetaCache {
   #cache = new Map();
