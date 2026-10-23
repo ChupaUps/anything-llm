@@ -164,40 +164,21 @@ const System = {
         return { success: false, user: null, message: e.message };
       });
   },
-  recoverAccount: async function (username, recoveryCodes) {
-    return await fetch(`${API_BASE}/system/recover-account`, {
-      method: "POST",
-      headers: baseHeaders(),
-      body: JSON.stringify({ username, recoveryCodes }),
+  /**
+   * Fetches the administrator contact channels for the "Forgot password"
+   * screen on the login page.
+   * @returns {Promise<{email?: string, phone?: string, messenger?: string}>}
+   */
+  fetchSupportContacts: async function () {
+    return await fetch(`${API_BASE}/system/support-contacts`, {
+      method: "GET",
+      cache: "no-cache",
     })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || "Error recovering account.");
-        }
-        return data;
-      })
+      .then((res) => res.json())
+      .then((res) => res.contacts || {})
       .catch((e) => {
         console.error(e);
-        return { success: false, error: e.message };
-      });
-  },
-  resetPassword: async function (token, newPassword, confirmPassword) {
-    return await fetch(`${API_BASE}/system/reset-password`, {
-      method: "POST",
-      headers: baseHeaders(),
-      body: JSON.stringify({ token, newPassword, confirmPassword }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || "Error resetting password.");
-        }
-        return data;
-      })
-      .catch((e) => {
-        console.error(e);
-        return { success: false, error: e.message };
+        return {};
       });
   },
 

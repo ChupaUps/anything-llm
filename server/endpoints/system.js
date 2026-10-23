@@ -49,17 +49,11 @@ const { WorkspaceParsedFiles } = require("../models/workspaceParsedFiles");
 const {
   flexUserRoleValid,
   ROLES,
-  isMultiUserSetup,
 } = require("../utils/middleware/multiUserProtected");
 const { fetchPfp, determinePfpFilepath } = require("../utils/files/pfp");
 const { exportChatsAsType } = require("../utils/helpers/chat/convertTo");
 const { EventLogs } = require("../models/eventLogs");
 const { CollectorApi } = require("../utils/collectorApi");
-const {
-  recoverAccount,
-  resetPassword,
-  generateRecoveryCodes,
-} = require("../utils/PasswordRecovery");
 const { SlashCommandPresets } = require("../models/slashCommandsPresets");
 const { EncryptionManager } = require("../utils/EncryptionManager");
 const { BrowserExtensionApiKey } = require("../models/browserExtensionApiKey");
@@ -291,24 +285,11 @@ function systemEndpoints(app) {
           existingUser?.id
         );
 
-        // Generate a session token for the user then check if they have seen the recovery codes
-        // and if not, generate recovery codes and return them to the frontend.
+        // Generate a session token for the user.
         const sessionToken = makeJWT(
           { id: existingUser.id, username: existingUser.username },
           process.env.JWT_EXPIRY
         );
-        if (!existingUser.seen_recovery_codes) {
-          const plainTextCodes = await generateRecoveryCodes(existingUser.id);
-          response.status(200).json({
-            valid: true,
-            user: User.filterFields(existingUser),
-            token: sessionToken,
-            message: null,
-            recoveryCodes: plainTextCodes,
-          });
-          return;
-        }
-
         response.status(200).json({
           valid: true,
           user: User.filterFields(existingUser),
@@ -399,54 +380,20 @@ function systemEndpoints(app) {
     }
   );
 
-  app.post(
-    "/system/recover-account",
-    [isMultiUserSetup],
-    async (request, response) => {
-      try {
-        const { username, recoveryCodes } = reqBody(request);
-        const { success, resetToken, error } = await recoverAccount(
-          username,
-          recoveryCodes
-        );
-
-        if (success) {
-          response.status(200).json({ success, resetToken });
-        } else {
-          response.status(400).json({ success, message: error });
-        }
-      } catch (error) {
-        console.error("Error recovering account:", error);
-        response
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      }
+  /**
+   * Public endpoint used by the login page to show the administrator
+   * contacts on the "Forgot password" screen. Only rows that the
+   * administrator enabled and filled in are returned.
+   */
+  app.get("/system/support-contacts", async (_, response) => {
+    try {
+      const contacts = await SystemSettings.supportContacts();
+      response.status(200).json({ contacts });
+    } catch (error) {
+      console.error("Error fetching support contacts:", error);
+      response.status(500).json({ contacts: {} });
     }
-  );
-
-  app.post(
-    "/system/reset-password",
-    [isMultiUserSetup],
-    async (request, response) => {
-      try {
-        const { token, newPassword, confirmPassword } = reqBody(request);
-        const { success, message } = await resetPassword(
-          token,
-          newPassword,
-          confirmPassword
-        );
-
-        if (success) {
-          response.status(200).json({ success, message });
-        } else {
-          response.status(400).json({ success, message });
-        }
-      } catch (error) {
-        console.error("Error resetting password:", error);
-        response.status(500).json({ success: false, message: error.message });
-      }
-    }
-  );
+  });
 
   app.get(
     "/system/system-vectors",

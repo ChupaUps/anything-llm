@@ -8,11 +8,19 @@ i18next
   .use(initReactI18next) // Initialize i18n for React
   .use(LanguageDetector)
   .init({
-    fallbackLng: "en",
+    fallbackLng: "ru",
+    supportedLngs: ["ru", "en"],
     debug: import.meta.env.DEV,
     defaultNS,
     resources,
     lowerCaseLng: true,
+    detection: {
+      // Russian is the default for anyone who has not explicitly picked a
+      // language in the UI, so the browser locale is intentionally ignored.
+      order: ["localStorage"],
+      caches: ["localStorage"],
+      lookupLocalStorage: "i18nextLng",
+    },
     interpolation: {
       escapeValue: false,
     },

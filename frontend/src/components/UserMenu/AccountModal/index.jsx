@@ -200,7 +200,7 @@ function LanguagePreference() {
       <select
         name="userLang"
         className="bg-zinc-800 border border-zinc-800 light:bg-white light:border-slate-300 w-fit mt-2 px-4 outline-none focus:border-sky-500 light:focus:border-sky-500 text-zinc-100 light:text-slate-900 text-sm rounded-lg block py-2"
-        defaultValue={currentLanguage || "en"}
+        defaultValue={currentLanguage || "ru"}
         onChange={(e) => changeLanguage(e.target.value)}
       >
         {supportedLanguages.map((lang) => {

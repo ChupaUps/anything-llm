@@ -13,7 +13,7 @@ export function baseHeaders(providedToken = null) {
   return {
     Authorization: token ? `Bearer ${token}` : null,
     "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-    "X-Language": navigator.language || "en",
+    "X-Language": window.localStorage.getItem("i18nextLng") || "ru",
   };
 }
 

@@ -37,6 +37,7 @@ const TABS = {
   },
   browser: { icon: AppWindow, Component: CustomSiteSettings },
 };
+import SupportContacts from "../components/SupportContacts";
 
 export default function BrandingSettings() {
   const { t } = useTranslation();
@@ -89,6 +90,12 @@ export default function BrandingSettings() {
           <div role="tabpanel" className="pt-2">
             <Component />
           </div>
+          <CustomAppName />
+          <CustomLogo />
+          <FooterCustomization />
+          <SupportEmail />
+          <SupportContacts />
+          <CustomSiteSettings />
         </div>
       </div>
     </div>

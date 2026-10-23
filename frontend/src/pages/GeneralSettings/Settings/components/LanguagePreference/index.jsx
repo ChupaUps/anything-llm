@@ -22,7 +22,7 @@ export default function LanguagePreference() {
         <select
           name="userLang"
           className="border-none bg-theme-settings-input-bg mt-2 text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-fit py-2 px-4"
-          defaultValue={currentLanguage || "en"}
+          defaultValue={currentLanguage || "ru"}
           onChange={(e) => changeLanguage(e.target.value)}
         >
           {supportedLanguages.map((lang) => {
