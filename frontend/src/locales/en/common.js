@@ -137,7 +137,8 @@ const TRANSLATIONS = {
       cta: "contact the administrator",
       description:
         "To reset your password, contact your platform administrator using any of the contacts below.",
-      "not-configured": "The administrator has not added contact details yet.",
+      "not-configured":
+        "The administrator has not added contact details yet.",
       close: "Back to login",
       channels: {
         email: "Email",
@@ -900,7 +901,7 @@ const TRANSLATIONS = {
       "support-contacts": {
         title: "Password Recovery Contacts",
         description:
-          'Contacts shown to users when they click "Forgot password" on the login page. Enable and fill in only the channels you want to display.',
+          "Contacts shown to users when they click \"Forgot password\" on the login page. Enable and fill in only the channels you want to display.",
         show: "Show on login page",
         save: "Save",
         "save-success": "Password recovery contacts updated.",
@@ -1205,6 +1206,9 @@ const TRANSLATIONS = {
     description:
       "These are the credentials and settings for your preferred transcription model provider. Its important these keys are current and correct or else media files and audio will not transcribe.",
     provider: "Transcription Provider",
+    "chunk-duration": "Chunk length (seconds)",
+    "chunk-duration-desc":
+      "Audio longer than this is split into parts of this length and transcribed piece by piece. Parts without any speech are skipped and never sent to the provider.",
     "warn-start":
       "Using the local whisper model on machines with limited RAM or CPU can stall Interstorm AI when processing media files.",
     "warn-recommend":

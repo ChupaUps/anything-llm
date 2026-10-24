@@ -605,6 +605,11 @@ const KEY_MAPPING = {
     checks: [isNotEmpty],
     postUpdate: [],
   },
+  WhisperChunkDuration: {
+    envKey: "WHISPER_CHUNK_DURATION",
+    checks: [validWhisperChunkDuration],
+    postUpdate: [],
+  },
 
   // System Settings
   AuthToken: {
@@ -1211,6 +1216,17 @@ function validLocalWhisper(input = "") {
   return validSelection
     ? null
     : `${input} is not a valid Whisper model selection.`;
+}
+
+// Long audio is split into chunks of this length before transcription, so the
+// value has to stay in a range where splitting still makes sense.
+function validWhisperChunkDuration(input = "") {
+  const seconds = Number(input);
+  if (!Number.isInteger(seconds))
+    return "Chunk length must be a whole number of seconds";
+  return seconds >= 30 && seconds <= 3600
+    ? null
+    : "Chunk length must be between 30 and 3600 seconds";
 }
 
 function supportedLLM(input = "") {

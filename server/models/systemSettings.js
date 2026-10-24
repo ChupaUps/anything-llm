@@ -128,7 +128,8 @@ const SystemSettings = {
           const entry = parsed?.[key] ?? {};
           contacts[key] = {
             show: entry.show === true || entry.show === "true",
-            value: typeof entry.value === "string" ? entry.value.trim() : "",
+            value:
+              typeof entry.value === "string" ? entry.value.trim() : "",
           };
         }
         return JSON.stringify(contacts);
@@ -569,6 +570,7 @@ const SystemSettings = {
       WhisperGenericOpenAiBaseUrl: process.env.WHISPER_GENERIC_OPEN_AI_BASE_URL,
       WhisperGenericOpenAiApiKey: !!process.env.WHISPER_GENERIC_OPEN_AI_API_KEY,
       WhisperGenericOpenAiModel: process.env.WHISPER_GENERIC_OPEN_AI_MODEL,
+      WhisperChunkDuration: Number(process.env.WHISPER_CHUNK_DURATION) || 1200,
 
       // --------------------------------------------------------
       // TTS/STT  Selection Settings & Configs

@@ -17,6 +17,7 @@ class FFMPEGWrapper {
     if (FFMPEGWrapper._instance) return FFMPEGWrapper._instance;
     FFMPEGWrapper._instance = this;
     this._ffmpegPath = null;
+    this._ffprobePath = null;
   }
 
   log(text, ...args) {
@@ -50,6 +51,35 @@ class FFMPEGWrapper {
     }
 
     throw new Error("FFMPEG binary not found.");
+  }
+
+  /**
+   * Locates ffprobe binary, which ships alongside ffmpeg and is used to read
+   * audio metadata (duration) without shelling out a pipeline.
+   *
+   * @returns {Promise<string>} Path to ffprobe binary
+   * @throws {Error}
+   */
+  async ffprobePath() {
+    if (this._ffprobePath) return this._ffprobePath;
+    await patchShellEnvironmentPath();
+
+    try {
+      const which = process.platform === "win32" ? "where" : "which";
+      const result = execSync(`${which} ffprobe`, { encoding: "utf8" }).trim();
+      const candidatePath = result?.split("\n")?.[0]?.trim();
+      if (!candidatePath) throw new Error("FFPROBE candidate path not found.");
+      if (!this.isValidFFMPEG(candidatePath))
+        throw new Error("FFPROBE candidate path is not a valid ffmpeg binary.");
+
+      this.log(`Found FFPROBE binary at ${candidatePath}`);
+      this._ffprobePath = candidatePath;
+      return this._ffprobePath;
+    } catch (error) {
+      this.log(error.message);
+    }
+
+    throw new Error("FFPROBE binary not found.");
   }
 
   /**
