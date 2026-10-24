@@ -157,6 +157,28 @@ export default function TranscriptionModelPreference() {
                     (provider) => provider.value === selectedProvider
                   )?.options(settings)}
               </div>
+              <div className="mt-6 flex gap-x-7 gap-[36px] flex-wrap">
+                <div className="flex flex-col w-60">
+                  <label className="text-white text-sm font-semibold block mb-3">
+                    {t("transcription.chunk-duration")}
+                  </label>
+                  <input
+                    type="number"
+                    name="WhisperChunkDuration"
+                    min={30}
+                    max={3600}
+                    step={1}
+                    className="border-none bg-theme-settings-input-bg text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+                    placeholder="1200"
+                    defaultValue={settings?.WhisperChunkDuration ?? 1200}
+                    required={true}
+                    onChange={() => setHasChanges(true)}
+                  />
+                  <p className="text-xs leading-[18px] font-base text-white text-opacity-60 mt-2">
+                    {t("transcription.chunk-duration-desc")}
+                  </p>
+                </div>
+              </div>
             </div>
           </form>
         </div>

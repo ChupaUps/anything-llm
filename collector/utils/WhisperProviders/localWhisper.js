@@ -1,14 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 const { v4 } = require("uuid");
+const { ChunkedWhisperProvider } = require("./ChunkedWhisperProvider");
 const defaultWhisper = "Xenova/whisper-small"; // Model Card: https://huggingface.co/Xenova/whisper-small
 const fileSize = {
   "Xenova/whisper-small": "250mb",
   "Xenova/whisper-large": "1.56GB",
 };
 
-class LocalWhisper {
+class LocalWhisper extends ChunkedWhisperProvider {
   constructor({ options }) {
+    super({ options });
     this.model = options?.WhisperModelPref ?? defaultWhisper;
     this.fileSize = fileSize[this.model];
     this.cacheDir = path.resolve(
@@ -18,15 +20,12 @@ class LocalWhisper {
     );
 
     this.modelPath = path.resolve(this.cacheDir, ...this.model.split("/"));
+    this.transcriber = null;
     // Make directory when it does not exist in existing installations
     if (!fs.existsSync(this.cacheDir))
       fs.mkdirSync(this.cacheDir, { recursive: true });
 
-    this.#log("Initialized.");
-  }
-
-  #log(text, ...args) {
-    console.log(`\x1b[32m[LocalWhisper]\x1b[0m ${text}`, ...args);
+    this.log("Initialized.");
   }
 
   #validateAudioFile(wavFile) {
@@ -84,7 +83,7 @@ class LocalWhisper {
       try {
         this.#validateAudioFile(wavFile);
       } catch (error) {
-        this.#log(`Audio validation failed: ${error.message}`);
+        this.log(`Audio validation failed: ${error.message}`);
         throw new Error(`Invalid audio file: ${error.message}`);
       }
 
@@ -116,8 +115,12 @@ class LocalWhisper {
   }
 
   async client() {
+    // The model is heavy to load, and a chunked file would otherwise reload it
+    // for every chunk, so the loaded pipeline is reused.
+    if (this.transcriber) return this.transcriber;
+
     if (!fs.existsSync(this.modelPath)) {
-      this.#log(
+      this.log(
         `The native whisper model has never been run and will be downloaded right now. Subsequent runs will be faster. (~${this.fileSize})`
       );
     }
@@ -128,22 +131,27 @@ class LocalWhisper {
         import("@xenova/transformers").then(({ pipeline }) => {
           return pipeline(...args);
         });
-      return await pipeline("automatic-speech-recognition", this.model, {
-        cache_dir: this.cacheDir,
-        ...(!fs.existsSync(this.modelPath)
-          ? {
-              // Show download progress if we need to download any files
-              progress_callback: (data) => {
-                if (!data.hasOwnProperty("progress")) return;
-                console.log(
-                  `\x1b[34m[ONNXWhisper - Downloading Model Files]\x1b[0m ${
-                    data.file
-                  } ${~~data?.progress}%`
-                );
-              },
-            }
-          : {}),
-      });
+      this.transcriber = await pipeline(
+        "automatic-speech-recognition",
+        this.model,
+        {
+          cache_dir: this.cacheDir,
+          ...(!fs.existsSync(this.modelPath)
+            ? {
+                // Show download progress if we need to download any files
+                progress_callback: (data) => {
+                  if (!data.hasOwnProperty("progress")) return;
+                  console.log(
+                    `\x1b[34m[ONNXWhisper - Downloading Model Files]\x1b[0m ${
+                      data.file
+                    } ${~~data?.progress}%`
+                  );
+                },
+              }
+            : {}),
+        }
+      );
+      return this.transcriber;
     } catch (error) {
       let errMsg = error.message;
       if (errMsg.includes("Could not locate file")) {
@@ -151,7 +159,7 @@ class LocalWhisper {
           "The native whisper model failed to download from the huggingface.co CDN. Your internet connection may be unstable or blocked by Huggingface.co - you will need to download the model manually and place it in the storage/models folder to use local Whisper transcription.";
       }
 
-      this.#log(
+      this.log(
         `Failed to load the native whisper model: ${errMsg}`,
         error.stack
       );
@@ -159,36 +167,30 @@ class LocalWhisper {
     }
   }
 
-  async processFile(fullFilePath, filename) {
-    try {
-      const audioDataPromise = new Promise((resolve) =>
-        this.#convertToWavAudioData(fullFilePath).then((audioData) =>
-          resolve(audioData)
-        )
-      );
-      const [audioData, transcriber] = await Promise.all([
-        audioDataPromise,
-        this.client(),
-      ]);
+  /**
+   * Transcribes a single (already prepared) file with the built-in model.
+   * @param {string} filePath
+   * @returns {Promise<{ content: string, error: string|null }>}
+   */
+  async transcribe(filePath) {
+    const [audioData, transcriber] = await Promise.all([
+      this.#convertToWavAudioData(filePath),
+      this.client(),
+    ]);
 
-      if (!audioData) {
-        this.#log(`Failed to parse content from ${filename}.`);
-        return {
-          content: null,
-          error: `Failed to parse content from ${filename}.`,
-        };
-      }
+    if (!audioData)
+      return {
+        content: "",
+        error: `Failed to parse content from ${path.basename(filePath)}.`,
+      };
 
-      this.#log(`Transcribing audio data to text...`);
-      const { text } = await transcriber(audioData, {
-        chunk_length_s: 30,
-        stride_length_s: 5,
-      });
+    this.log(`Transcribing audio data to text...`);
+    const { text } = await transcriber(audioData, {
+      chunk_length_s: 30,
+      stride_length_s: 5,
+    });
 
-      return { content: text, error: null };
-    } catch (error) {
-      return { content: null, error: error.message };
-    }
+    return { content: text, error: null };
   }
 }
 

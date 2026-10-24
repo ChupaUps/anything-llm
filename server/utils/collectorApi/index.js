@@ -9,6 +9,7 @@ const { Agent } = require("undici");
  * @property {string} WhisperGenericOpenAiBaseUrl - The base URL of the OpenAI compatible endpoint used by the generic Whisper provider.
  * @property {string} WhisperGenericOpenAiApiKey - The API key used by the generic (OpenAI compatible) Whisper provider.
  * @property {string} WhisperGenericOpenAiModel - The transcription model used by the generic (OpenAI compatible) Whisper provider.
+ * @property {number} whisperChunkDuration - Length in seconds of the audio chunks that long files are split into before transcription.
  * @property {Object} ocr - The OCR options
  * @property {{allowAnyIp: "true"|null|undefined}} runtimeSettings - The runtime settings that are passed to the collector. Persisted across requests.
  */
@@ -73,6 +74,7 @@ class CollectorApi {
         process.env.WHISPER_GENERIC_OPEN_AI_API_KEY || null,
       WhisperGenericOpenAiModel:
         process.env.WHISPER_GENERIC_OPEN_AI_MODEL || null,
+      whisperChunkDuration: Number(process.env.WHISPER_CHUNK_DURATION) || 1200,
       ocr: {
         langList: process.env.TARGET_OCR_LANG || "eng",
       },

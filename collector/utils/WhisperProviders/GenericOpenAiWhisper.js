@@ -1,7 +1,10 @@
 const fs = require("fs");
+const path = require("path");
+const { ChunkedWhisperProvider } = require("./ChunkedWhisperProvider");
 
-class GenericOpenAiWhisper {
+class GenericOpenAiWhisper extends ChunkedWhisperProvider {
   constructor({ options }) {
+    super({ options });
     const { OpenAI: OpenAIApi } = require("openai");
     if (!options.WhisperGenericOpenAiBaseUrl)
       throw new Error("No base URL was set.");
@@ -12,37 +15,36 @@ class GenericOpenAiWhisper {
     });
     this.model = options.WhisperGenericOpenAiModel || "whisper-small";
     this.temperature = 0;
-    this.#log("Initialized.");
+    this.log("Initialized.");
   }
 
-  #log(text, ...args) {
-    console.log(`\x1b[32m[GenericOpenAiWhisper]\x1b[0m ${text}`, ...args);
-  }
-
-  async processFile(fullFilePath) {
-    return await this.openai.audio.transcriptions
-      .create({
-        file: fs.createReadStream(fullFilePath),
+  /**
+   * @param {string} filePath
+   * @returns {Promise<{ content: string, error: string|null }>}
+   */
+  async transcribe(filePath) {
+    try {
+      const response = await this.openai.audio.transcriptions.create({
+        file: fs.createReadStream(filePath),
         model: this.model,
         temperature: this.temperature,
-      })
-      .then((response) => {
-        if (!response) {
-          return {
-            content: "",
-            error: "No content was able to be transcribed.",
-          };
-        }
-
-        return { content: response.text, error: null };
-      })
-      .catch((error) => {
-        this.#log(
-          `Could not get any response from openai compatible whisper endpoint`,
-          error.message
-        );
-        return { content: "", error: error.message };
       });
+
+      if (!response || !response.text)
+        return {
+          content: "",
+          error: "No content was able to be transcribed.",
+        };
+
+      this.log(`Successfully transcribed ${path.basename(filePath)}`);
+      return { content: response.text, error: null };
+    } catch (error) {
+      this.log(
+        `Could not get any response from openai compatible whisper endpoint`,
+        error.message
+      );
+      return { content: "", error: error.message };
+    }
   }
 }
 
