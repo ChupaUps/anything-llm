@@ -4,8 +4,8 @@ import ChatSidebar from "../ChatSidebar";
 import { MemoriesProvider, useMemoriesContext } from "./MemoriesContext";
 import PersonalizationToggle from "./PersonalizationToggle";
 import MemoryTabs from "./MemoryTabs";
-import MemoryCard from "./MemoryCard";
-import MemoryModal from "./MemoryModal";
+import MemoryCard from "@/components/Memories/MemoryCard";
+import MemoryModal from "@/components/Memories/MemoryModal";
 
 export { useMemoriesSidebar } from "../ChatSidebar";
 
@@ -47,7 +47,18 @@ function SidebarPanel({ children }) {
 }
 
 function MemoryList() {
-  const { enabled, activeMemories } = useMemoriesContext();
+  const {
+    enabled,
+    activeTab,
+    activeMemories,
+    memories,
+    limits,
+    openEditModal,
+    handleDelete,
+    handleTogglePin,
+    handlePromote,
+    handleDemote,
+  } = useMemoriesContext();
 
   if (!enabled) return null;
   if (activeMemories.length === 0) {
@@ -59,12 +70,28 @@ function MemoryList() {
     );
   }
 
+  const isWorkspace = activeTab === "workspace";
+  const canMove = isWorkspace
+    ? memories.global.length < limits.global
+    : memories.workspace.length < limits.workspace;
+
   return (
     <>
       <MemoryTabs />
       <div className="flex flex-col gap-1.5 pb-4">
         {activeMemories.map((memory) => (
-          <MemoryCard key={memory.id} memory={memory} />
+          <MemoryCard
+            key={memory.id}
+            memory={memory}
+            isWorkspace={isWorkspace}
+            canMove={canMove}
+            onEdit={openEditModal}
+            onMove={(m) =>
+              isWorkspace ? handlePromote(m.id) : handleDemote(m.id)
+            }
+            onTogglePin={handleTogglePin}
+            onDelete={(m) => handleDelete(m.id)}
+          />
         ))}
       </div>
     </>

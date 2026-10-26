@@ -246,7 +246,10 @@ function buildReflectorUserMessage(
     `Existing GLOBAL memories:\n${formatMemoryList(globalMemories)}`
   );
   if (globalSlots > 0) sections.push(`Available GLOBAL slots: ${globalSlots}`);
-  else sections.push(`GLOBAL is full — do not return any GLOBAL memories.`);
+  else
+    sections.push(
+      `GLOBAL is at capacity — a new GLOBAL memory will replace the least-recently-used one.`
+    );
 
   sections.push(
     `Existing WORKSPACE memories:\n${formatMemoryList(workspaceMemories)}`

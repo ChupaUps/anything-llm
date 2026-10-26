@@ -13,6 +13,11 @@ const { getBaseLLMProviderModel } = require("../utils/helpers");
 const {
   ConnectionStringParser,
 } = require("../utils/agents/aibitat/plugins/sql-agent/SQLConnectors/utils");
+const {
+  DEFAULT_TIME_ZONE,
+  isValidTimeZone,
+  resolveTimeZone,
+} = require("../utils/time/zone");
 
 function isNullOrNaN(value) {
   if (value === null) return true;
@@ -94,6 +99,10 @@ const SystemSettings = {
     "custom_app_name",
     "default_system_prompt",
 
+    // Usage dashboard reporting period & time zone
+    "usage_period_start_day",
+    "system_timezone",
+
     // Meta page customization
     "meta_page_title",
     "meta_page_favicon",
@@ -131,14 +140,41 @@ const SystemSettings = {
           const entry = parsed?.[key] ?? {};
           contacts[key] = {
             show: entry.show === true || entry.show === "true",
-            value:
-              typeof entry.value === "string" ? entry.value.trim() : "",
+            value: typeof entry.value === "string" ? entry.value.trim() : "",
           };
         }
         return JSON.stringify(contacts);
       } catch {
         console.error(`Failed to run validation function on support_contacts`);
         return JSON.stringify({});
+      }
+    },
+    usage_period_start_day: (update) => {
+      try {
+        const day = Number(update);
+        if (!Number.isInteger(day) || day < 1 || day > 28)
+          throw new Error("Value must be a day of month between 1 and 28.");
+        return day;
+      } catch (e) {
+        console.error(
+          `Failed to run validation function on usage_period_start_day`,
+          e.message
+        );
+        return 1;
+      }
+    },
+    system_timezone: (update) => {
+      try {
+        const timeZone = typeof update === "string" ? update.trim() : "";
+        if (!isValidTimeZone(timeZone))
+          throw new Error("Value must be a valid IANA time zone.");
+        return timeZone;
+      } catch (e) {
+        console.error(
+          `Failed to run validation function on system_timezone`,
+          e.message
+        );
+        return DEFAULT_TIME_ZONE;
       }
     },
     text_splitter_chunk_size: (update) => {
@@ -226,7 +262,10 @@ const SystemSettings = {
           label: "memory_auto_extraction",
         });
         const autoOn = !autoSetting || autoSetting.value === "true";
-        await bgService.syncMemoryJob(enabled && autoOn);
+        await bgService.syncMemoryJobs({
+          memoryEnabled: enabled,
+          autoExtraction: autoOn,
+        });
         return String(enabled);
       } catch (e) {
         console.error(
@@ -244,7 +283,10 @@ const SystemSettings = {
         } = require("../utils/BackgroundWorkers/index.js");
         const bgService = new BackgroundService();
         const memoriesOn = await SystemSettings.memoriesEnabled();
-        await bgService.syncMemoryJob(memoriesOn && enabled);
+        await bgService.syncMemoryJobs({
+          memoryEnabled: memoriesOn,
+          autoExtraction: enabled,
+        });
         return String(enabled);
       } catch (e) {
         console.error(
@@ -724,6 +766,34 @@ const SystemSettings = {
       console.error(error.message);
       return {};
     }
+  },
+
+  /**
+   * Day of month that starts the reporting period on the usage dashboard
+   * (1 = calendar month, 15 = mid-month to mid-month). Clamped to 1-28 because
+   * every month has at least 28 days.
+   * @returns {Promise<number>}
+   */
+  usagePeriodStartDay: async function () {
+    const value = Number(
+      await this.getValueOrFallback({ label: "usage_period_start_day" }, 1)
+    );
+    if (!Number.isInteger(value) || value < 1 || value > 28) return 1;
+    return value;
+  },
+
+  /**
+   * Administrator-selected IANA time zone used by every server-side date
+   * calculation (dashboard day buckets, reporting period boundaries, logs).
+   * Falls back to the process zone and then to UTC when nothing is stored.
+   * @returns {Promise<string>}
+   */
+  systemTimeZone: async function () {
+    const stored = await this.getValueOrFallback(
+      { label: "system_timezone" },
+      null
+    );
+    return resolveTimeZone(stored);
   },
 
   where: async function (clause = {}, limit) {

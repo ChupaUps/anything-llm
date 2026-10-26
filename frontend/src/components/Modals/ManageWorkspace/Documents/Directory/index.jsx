@@ -23,6 +23,7 @@ import { Tooltip } from "react-tooltip";
 import { safeJsonParse } from "@/utils/request";
 import useUploadQueue from "../hooks/useUploadQueue";
 import { getFilesFromUploadEvent } from "@/utils/folderUpload";
+import useUser from "@/hooks/useUser";
 
 const NO_FILES = [];
 
@@ -34,6 +35,10 @@ export default function Directory({
   moveToWorkspace,
 }) {
   const { t } = useTranslation();
+  // Default users only manage the documents of their own personal folder, so
+  // folder creation and cross-workspace moves are reserved for admins/managers.
+  const { user } = useUser();
+  const canManageFolders = user?.role !== "default";
   const [showFolderSelection, setShowFolderSelection] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     visible: false,
@@ -292,19 +297,21 @@ export default function Directory({
                 />
               )}
             </div>
-            <button
-              className="border-none flex items-center gap-x-2 cursor-pointer px-[14px] py-[7px] -mr-[14px] rounded-lg hover:bg-theme-sidebar-subitem-hover z-20 relative"
-              onClick={openFolderModal}
-            >
-              <Plus
-                size={18}
-                weight="bold"
-                className="text-theme-text-primary light:text-[#0ba5ec]"
-              />
-              <div className="text-theme-text-primary light:text-[#0ba5ec] text-xs font-bold leading-[18px]">
-                {t("connectors.directory.new-folder")}
-              </div>
-            </button>
+            {canManageFolders && (
+              <button
+                className="border-none flex items-center gap-x-2 cursor-pointer px-[14px] py-[7px] -mr-[14px] rounded-lg hover:bg-theme-sidebar-subitem-hover z-20 relative"
+                onClick={openFolderModal}
+              >
+                <Plus
+                  size={18}
+                  weight="bold"
+                  className="text-theme-text-primary light:text-[#0ba5ec]"
+                />
+                <div className="text-theme-text-primary light:text-[#0ba5ec] text-xs font-bold leading-[18px]">
+                  {t("connectors.directory.new-folder")}
+                </div>
+              </button>
+            )}
           </div>
 
           <div className="relative w-[560px] h-[310px] bg-theme-settings-input-bg rounded-2xl overflow-hidden border border-theme-modal-border">
@@ -380,31 +387,35 @@ export default function Directory({
               <div className="absolute bottom-[12px] left-0 right-0 flex justify-center pointer-events-none">
                 <div className="mx-auto bg-white/40 light:bg-white rounded-lg py-1 px-2 pointer-events-auto light:shadow-lg">
                   <div className="flex flex-row items-center gap-x-2">
-                    <button
-                      onClick={moveToWorkspace}
-                      onMouseEnter={() => setHighlightWorkspace(true)}
-                      onMouseLeave={() => setHighlightWorkspace(false)}
-                      className="border-none text-sm font-semibold bg-white light:bg-[#E0F2FE] h-[30px] px-2.5 rounded-lg hover:bg-neutral-800/80 hover:text-white light:text-[#026AA2] light:hover:bg-[#026AA2] light:hover:text-white"
-                    >
-                      {t("connectors.directory.move-workspace")}
-                    </button>
-                    <div className="relative">
-                      <button
-                        onClick={() =>
-                          setShowFolderSelection(!showFolderSelection)
-                        }
-                        className="border-none text-sm font-semibold bg-white light:bg-[#E0F2FE] h-[32px] w-[32px] rounded-lg text-dark-text hover:bg-neutral-800/80 hover:text-white light:text-[#026AA2] light:hover:bg-[#026AA2] light:hover:text-white flex justify-center items-center group"
-                      >
-                        <MoveToFolderIcon className="text-dark-text light:text-[#026AA2] group-hover:text-white" />
-                      </button>
-                      {showFolderSelection && (
-                        <FolderSelectionPopup
-                          folders={folders}
-                          onSelect={moveToFolder}
-                          onClose={() => setShowFolderSelection(false)}
-                        />
-                      )}
-                    </div>
+                    {canManageFolders && (
+                      <>
+                        <button
+                          onClick={moveToWorkspace}
+                          onMouseEnter={() => setHighlightWorkspace(true)}
+                          onMouseLeave={() => setHighlightWorkspace(false)}
+                          className="border-none text-sm font-semibold bg-white light:bg-[#E0F2FE] h-[30px] px-2.5 rounded-lg hover:bg-neutral-800/80 hover:text-white light:text-[#026AA2] light:hover:bg-[#026AA2] light:hover:text-white"
+                        >
+                          {t("connectors.directory.move-workspace")}
+                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setShowFolderSelection(!showFolderSelection)
+                            }
+                            className="border-none text-sm font-semibold bg-white light:bg-[#E0F2FE] h-[32px] w-[32px] rounded-lg text-dark-text hover:bg-neutral-800/80 hover:text-white light:text-[#026AA2] light:hover:bg-[#026AA2] light:hover:text-white flex justify-center items-center group"
+                          >
+                            <MoveToFolderIcon className="text-dark-text light:text-[#026AA2] group-hover:text-white" />
+                          </button>
+                          {showFolderSelection && (
+                            <FolderSelectionPopup
+                              folders={folders}
+                              onSelect={moveToFolder}
+                              onClose={() => setShowFolderSelection(false)}
+                            />
+                          )}
+                        </div>
+                      </>
+                    )}
                     <button
                       onClick={deleteFiles}
                       className="border-none text-sm font-semibold bg-white light:bg-[#E0F2FE] h-[32px] w-[32px] rounded-lg text-dark-text hover:bg-neutral-800/80 hover:text-white light:text-[#026AA2] light:hover:bg-[#026AA2] light:hover:text-white flex justify-center items-center"

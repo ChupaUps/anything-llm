@@ -8,6 +8,7 @@ import { ArrowUUpLeft, Eye, File, PushPin } from "@phosphor-icons/react";
 import Workspace from "@/models/workspace";
 import showToast from "@/utils/toast";
 import System from "@/models/system";
+import useUser from "@/hooks/useUser";
 
 export default function WorkspaceFileRow({
   item,
@@ -187,6 +188,7 @@ const PinItemToWorkspace = memo(({ workspace, docPath, item }) => {
 });
 
 const WatchForChanges = memo(({ workspace, docPath, item }) => {
+  const { user } = useUser();
   const [watched, setWatched] = useState(item?.watched || false);
   const watchEvent = new CustomEvent("watch_document_for_changes");
 
@@ -230,7 +232,9 @@ const WatchForChanges = memo(({ workspace, docPath, item }) => {
     }
   };
 
-  if (!item || !item.canWatch) return <div className="w-[16px] p-[2px] ml-2" />;
+  // Live document sync is an admin/manager only experimental feature.
+  if (!item || !item.canWatch || user?.role === "default")
+    return <div className="w-[16px] p-[2px] ml-2" />;
 
   return (
     <div

@@ -65,6 +65,9 @@ model users {
   createdAt                    DateTime                      @default(now())
   lastUpdatedAt                DateTime                      @default(now())
   dailyMessageLimit            Int?
+  // How many personal workspaces the user may own. Enforced for the
+  // `default` role only - admins and managers are unlimited.
+  workspaceLimit               Int                           @default(1)
   bio                          String?                       @default("")
   web_push_subscription_config String?
   workspace_chats              workspace_chats[]
@@ -136,6 +139,12 @@ model workspaces {
   queryRefusalResponse         String?
   vectorSearchMode             String?                        @default("default")
   router_id                    Int? // No relation to prevent whole table migration (SQLite limitation)
+  // Owner of a user-created (personal) workspace. Null for workspaces that
+  // were created by the system or through the developer API.
+  owner_id                     Int?
+  // Personal workspaces are created by `default` users and can only have
+  // their RAG data managed by their owner.
+  is_personal                  Boolean                        @default(false)
   workspace_users              workspace_users[]
   documents                    workspace_documents[]
   workspace_suggested_messages workspace_suggested_messages[]
@@ -145,6 +154,8 @@ model workspaces {
   prompt_history               prompt_history[]
   workspace_parsed_files       workspace_parsed_files[]
   memories                     memories[]
+
+  @@index([owner_id])
 }
 
 model workspace_threads {
@@ -271,6 +282,31 @@ model event_logs {
   occurredAt DateTime @default(now())
 
   @@index([event])
+}
+
+// Token/image/transcription usage recorded per user for the admin dashboard.
+// `kind` is one of `llm`, `image` or `transcription`; the columns that do not
+// apply to a kind stay at their defaults so SUM()s stay simple.
+model usage_events {
+  id               Int      @id @default(autoincrement())
+  kind             String
+  source           String?
+  user_id          Int?
+  workspace_id     Int?
+  model            String?
+  provider         String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  images           Int      @default(0)
+  audioSeconds     Float    @default(0)
+  totalCost        Float?
+  // Idempotency key for backfilled rows (eg: `chat:123`) - live rows leave it null.
+  sourceRef        String?  @unique
+  occurredAt       DateTime @default(now())
+
+  @@index([kind, occurredAt])
+  @@index([user_id, occurredAt])
 }
 
 model slash_command_presets {
@@ -430,6 +466,9 @@ model memories {
   workspaceId Int?      @map("workspace_id")
   scope       String    @default("workspace")
   content     String
+  source      String    @default("auto")
+  pinned      Boolean   @default(false)
+  useCount    Int       @default(0)
   lastUsedAt  DateTime? @map("last_used_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @default(now()) @map("updated_at")
@@ -439,6 +478,8 @@ model memories {
 
   @@index([userId, workspaceId])
   @@index([userId, scope])
+  @@index([userId, scope, lastUsedAt])
+  @@index([userId, workspaceId, lastUsedAt])
 }
 
 model model_routers {

@@ -1,4 +1,5 @@
 const { WorkspaceChats } = require("../../../models/workspaceChats");
+const { UsageEvents } = require("../../../models/usageEvents");
 const {
   generateImageForWorkspace,
   editImageForWorkspace,
@@ -95,6 +96,13 @@ async function generateImage(
           })
         : await generateImageForWorkspace({ prompt, signal: combinedSignal });
     const { storageFilename, filename, fileSize, notice } = result;
+    await UsageEvents.logImageGeneration({
+      user,
+      workspaceId: workspace?.id ?? null,
+      source: "command",
+      model: process.env.IMAGE_GEN_MODEL_PREF || null,
+      provider: process.env.IMAGE_GEN_PROVIDER || null,
+    });
 
     const outputs = [
       {

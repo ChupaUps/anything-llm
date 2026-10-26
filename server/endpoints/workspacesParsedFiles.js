@@ -11,6 +11,10 @@ const { validWorkspaceSlug } = require("../utils/middleware/validWorkspace");
 const { CollectorApi } = require("../utils/collectorApi");
 const { WorkspaceThread } = require("../models/workspaceThread");
 const { WorkspaceParsedFiles } = require("../models/workspaceParsedFiles");
+const {
+  canManageWorkspaceData,
+  scopedDocumentsFolder,
+} = require("../utils/workspaces/personal");
 
 function workspaceParsedFilesEndpoints(app) {
   if (!app) return;
@@ -69,24 +73,22 @@ function workspaceParsedFilesEndpoints(app) {
 
   app.post(
     "/workspace/:slug/embed-parsed-file/:fileId",
-    [
-      validatedRequest,
-      // Embed is still an admin/manager only feature
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
-    ],
+    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
     async function (request, response) {
       const { fileId = null } = request.params;
       try {
         const user = await userFromSession(request, response);
         const workspace = response.locals.workspace;
+        if (!canManageWorkspaceData(user, workspace))
+          return response.sendStatus(401).end();
 
         if (!fileId) return response.sendStatus(400).end();
         const { success, error, document } =
           await WorkspaceParsedFiles.moveToDocumentsAndEmbed(
             user,
             fileId,
-            workspace
+            workspace,
+            { folder: scopedDocumentsFolder(user) }
           );
 
         if (!success) {
@@ -120,24 +122,24 @@ function workspaceParsedFilesEndpoints(app) {
 
   app.post(
     "/workspace/:slug/move-parsed-files",
-    [
-      validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
-    ],
+    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
     async function (request, response) {
       try {
         const user = await userFromSession(request, response);
         const workspace = response.locals.workspace;
+        if (!canManageWorkspaceData(user, workspace))
+          return response.sendStatus(401).end();
+
         const { fileIds = [] } = reqBody(request);
         if (!Array.isArray(fileIds)) return response.sendStatus(400);
 
+        const folder = scopedDocumentsFolder(user);
         // null marks a failed move
         const locations = await Promise.all(
           fileIds.map((fileId) =>
-            WorkspaceParsedFiles.moveToDocuments(user, fileId, workspace).catch(
-              () => null
-            )
+            WorkspaceParsedFiles.moveToDocuments(user, fileId, workspace, {
+              folder,
+            }).catch(() => null)
           )
         );
         return response.status(200).json({ locations });

@@ -2,6 +2,7 @@ const { ApiKey } = require("../models/apiKeys");
 const { BrowserExtensionApiKey } = require("../models/browserExtensionApiKey");
 const { Document } = require("../models/documents");
 const { EventLogs } = require("../models/eventLogs");
+const { UsageEvents } = require("../models/usageEvents");
 const { Invite } = require("../models/invite");
 const { SystemSettings } = require("../models/systemSettings");
 const { User } = require("../models/user");
@@ -24,6 +25,7 @@ const {
   ROLES,
 } = require("../utils/middleware/multiUserProtected");
 const { validatedRequest } = require("../utils/middleware/validatedRequest");
+const { applySystemTimeZone } = require("../utils/time/zone");
 const ImportedPlugin = require("../utils/agents/imported");
 const {
   simpleSSOLoginDisabledMiddleware,
@@ -497,6 +499,12 @@ function adminEndpoints(app) {
         }
 
         await SystemSettings.updateSettings(updates);
+
+        // The time zone drives every server-side date calculation, so apply it
+        // to the running process instead of waiting for a container restart.
+        if (Object.prototype.hasOwnProperty.call(updates, "system_timezone"))
+          applySystemTimeZone(await SystemSettings.systemTimeZone());
+
         response.status(200).json({ success: true, error: null });
       } catch (e) {
         console.error(e);
@@ -545,6 +553,34 @@ function adminEndpoints(app) {
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.get(
+    "/admin/usage-dashboard",
+    // Flex so single-user installs (no roles) can still see their own usage.
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      try {
+        // The reporting period start day and the time zone are admin-only
+        // settings so settlements that run mid-month or in another zone work.
+        const [periodStartDay, timeZone] = await Promise.all([
+          SystemSettings.usagePeriodStartDay(),
+          SystemSettings.systemTimeZone(),
+        ]);
+        const data = await UsageEvents.dashboard({
+          days: Number(request.query?.days || 90),
+          periodStartDay,
+          timeZone,
+        });
+        return response.status(200).json({ success: true, data });
+      } catch (e) {
+        console.error(e);
+        return response.status(500).json({
+          success: false,
+          error: "Could not load usage statistics.",
+        });
       }
     }
   );

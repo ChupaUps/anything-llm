@@ -28,6 +28,7 @@ export default function ServerSTT({ sendCommand }) {
   const [stream, setStream] = useState(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const startedAtRef = useRef(0);
 
   const stopListening = useCallback(() => {
     const recorder = recorderRef.current;
@@ -72,9 +73,16 @@ export default function ServerSTT({ sendCommand }) {
         const blob = new Blob(chunks, { type: recorder.mimeType });
         if (blob.size === 0) return;
 
+        // Length of the clip, reported to the server so transcription usage
+        // can be tracked (the upload itself carries no duration).
+        const durationSeconds = startedAtRef.current
+          ? (Date.now() - startedAtRef.current) / 1000
+          : 0;
+
         await uploadAndDispatch(
           blob,
           recorder.mimeType,
+          durationSeconds,
           sendCommand,
           setProcessing,
           t
@@ -82,6 +90,7 @@ export default function ServerSTT({ sendCommand }) {
       };
 
       recorderRef.current = recorder;
+      startedAtRef.current = Date.now();
       recorder.start();
       setStream(audioStream);
       setListening(true);
@@ -104,6 +113,7 @@ export default function ServerSTT({ sendCommand }) {
 async function uploadAndDispatch(
   blob,
   mimeType,
+  durationSeconds,
   sendCommand,
   setProcessing,
   t
@@ -112,7 +122,8 @@ async function uploadAndDispatch(
   const extension = mimeType.includes("ogg") ? "ogg" : "webm";
   const { text, error } = await System.transcribeAudio(
     blob,
-    `audio.${extension}`
+    `audio.${extension}`,
+    durationSeconds
   );
   setProcessing(false);
 

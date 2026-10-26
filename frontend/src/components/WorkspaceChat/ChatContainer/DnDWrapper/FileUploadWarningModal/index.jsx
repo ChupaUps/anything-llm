@@ -7,7 +7,6 @@ import Modal, {
 } from "@/components/lib/Modal";
 import pluralize from "pluralize";
 import { numberWithCommas } from "@/utils/numbers";
-import useUser from "@/hooks/useUser";
 import { Link } from "react-router-dom";
 import Paths from "@/utils/paths";
 import Workspace from "@/models/workspace";
@@ -21,8 +20,9 @@ export default function FileUploadWarningModal({
   maxTokens,
   fileCount = 1,
 }) {
-  const { user } = useUser();
-  const canEmbed = !user || user.role !== "default";
+  // Embedding is enforced server-side: default users can only embed files
+  // into their own personal workspace.
+  const canEmbed = true;
   if (!show) return null;
 
   return (

@@ -11,6 +11,7 @@ const { OpenAiWhisper } = require("../../utils/WhisperProviders/OpenAiWhisper");
 const {
   GenericOpenAiWhisper,
 } = require("../../utils/WhisperProviders/GenericOpenAiWhisper");
+const { readDuration } = require("../../utils/WhisperProviders/audioChunks");
 
 const WHISPER_PROVIDERS = {
   openai: OpenAiWhisper,
@@ -31,6 +32,10 @@ async function asAudio({
     : WHISPER_PROVIDERS.local;
 
   console.log(`-- Working ${filename} --`);
+  // Length is read before the provider runs because the source file is trashed
+  // once transcription finishes. The server uses it to account how much audio
+  // was sent for transcription.
+  const audioSeconds = await readDuration(fullFilePath).catch(() => 0);
   const whisper = new WhisperProvider({ options });
   const { content, error } = await whisper.processFile(fullFilePath, filename);
 
@@ -41,6 +46,7 @@ async function asAudio({
       success: false,
       reason: error,
       documents: [],
+      audioSeconds,
     };
   }
 
@@ -51,6 +57,7 @@ async function asAudio({
       success: false,
       reason: `No text content found in ${filename}.`,
       documents: [],
+      audioSeconds,
     };
   }
 
@@ -77,7 +84,7 @@ async function asAudio({
   console.log(
     `[SUCCESS]: ${filename} transcribed, converted & ready for embedding.\n`
   );
-  return { success: true, reason: null, documents: [document] };
+  return { success: true, reason: null, documents: [document], audioSeconds };
 }
 
 module.exports = asAudio;

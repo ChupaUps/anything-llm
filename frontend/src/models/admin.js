@@ -51,6 +51,22 @@ const Admin = {
       });
   },
 
+  // Usage dashboard
+  usageDashboard: async (days = 90) => {
+    return await fetch(
+      `${API_BASE}/admin/usage-dashboard?days=${Number(days) || 90}`,
+      {
+        method: "GET",
+        headers: baseHeaders(),
+      }
+    )
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, data: null, error: e.message };
+      });
+  },
+
   // Invitations
   invites: async () => {
     return await fetch(`${API_BASE}/admin/invites`, {

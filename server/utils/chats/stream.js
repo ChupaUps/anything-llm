@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
 const { WorkspaceChats } = require("../../models/workspaceChats");
 const { WorkspaceParsedFiles } = require("../../models/workspaceParsedFiles");
+const { UsageEvents } = require("../../models/usageEvents");
 const { getVectorDbClass, resolveProviderConnector } = require("../helpers");
 const { addChatCostToMetrics } = require("../helpers/modelPricing");
 const { writeResponseChunk } = require("../helpers/chat/responses");
@@ -337,6 +338,15 @@ async function streamChatWithWorkspace(
       connector: LLMConnector,
     });
   }
+
+  // Token usage is recorded before persistence so a failed chat write still
+  // shows up in the admin dashboard - the provider charged for it either way.
+  await UsageEvents.logLLMUsage({
+    metrics,
+    user,
+    workspace,
+    source: "chat",
+  });
 
   if (completeText?.length > 0) {
     const { chat } = await WorkspaceChats.new({

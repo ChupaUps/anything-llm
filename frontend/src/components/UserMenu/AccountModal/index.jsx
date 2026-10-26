@@ -20,6 +20,7 @@ import PalettePicker from "@/palettes/PalettePicker";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { Tooltip } from "react-tooltip";
+import MemoriesSettings from "./MemoriesSettings";
 import { safeJsonParse } from "@/utils/request";
 import Toggle from "@/components/lib/Toggle";
 import {
@@ -28,9 +29,14 @@ import {
   USERNAME_PATTERN,
 } from "@/utils/username";
 
-export default function AccountModal({ user, hideModal }) {
+export default function AccountModal({
+  user,
+  hideModal,
+  initialTab = "profile",
+}) {
   const { pfp, setPfp } = usePfp();
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -87,100 +93,135 @@ export default function AccountModal({ user, hideModal }) {
   };
   return (
     <Modal isOpen={true} onClose={hideModal} size="lg">
-      <form onSubmit={handleUpdate} className="flex flex-col gap-y-5">
-        <ModalHeader
-          title={t("profile_settings.edit_account")}
-          onClose={hideModal}
-        />
-        <ModalBody>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-            <div className="flex flex-col items-center">
-              <label className="group w-48 h-48 flex flex-col items-center justify-center bg-zinc-800 hover:bg-zinc-700 light:bg-sky-100 light:hover:bg-transparent transition-colors duration-300 rounded-full border-2 border-dashed border-white light:border-slate-400 cursor-pointer hover:opacity-60">
-                <input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-                {pfp ? (
-                  <img
-                    src={pfp}
-                    alt="User profile picture"
-                    className="w-48 h-48 rounded-full object-cover bg-white"
+      <ModalHeader
+        title={
+          activeTab === "profile"
+            ? t("profile_settings.edit_account")
+            : t("profile_settings.memories")
+        }
+        onClose={hideModal}
+      />
+      <AccountTabs activeTab={activeTab} onChange={setActiveTab} />
+      {activeTab === "memories" ? (
+        <MemoriesSettings />
+      ) : (
+        <form onSubmit={handleUpdate} className="flex flex-col gap-y-5">
+          <ModalBody>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+              <div className="flex flex-col items-center">
+                <label className="group w-48 h-48 flex flex-col items-center justify-center bg-zinc-800 hover:bg-zinc-700 light:bg-sky-100 light:hover:bg-transparent transition-colors duration-300 rounded-full border-2 border-dashed border-white light:border-slate-400 cursor-pointer hover:opacity-60">
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
                   />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-3">
-                    <Plus className="w-8 h-8 text-zinc-400 light:text-slate-500 m-2" />
-                    <span className="text-zinc-400 light:text-slate-500 text-sm font-semibold">
-                      {t("profile_settings.profile_picture")}
-                    </span>
-                    <span className="text-zinc-400 light:text-slate-500 text-xs">
-                      800 x 800
-                    </span>
-                  </div>
+                  {pfp ? (
+                    <img
+                      src={pfp}
+                      alt="User profile picture"
+                      className="w-48 h-48 rounded-full object-cover bg-white"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-3">
+                      <Plus className="w-8 h-8 text-zinc-400 light:text-slate-500 m-2" />
+                      <span className="text-zinc-400 light:text-slate-500 text-sm font-semibold">
+                        {t("profile_settings.profile_picture")}
+                      </span>
+                      <span className="text-zinc-400 light:text-slate-500 text-xs">
+                        800 x 800
+                      </span>
+                    </div>
+                  )}
+                </label>
+                {pfp && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePfp}
+                    className="border-none bg-transparent mt-3 text-zinc-400 light:text-slate-500 text-sm font-medium hover:underline"
+                  >
+                    {t("profile_settings.remove_profile_picture")}
+                  </button>
                 )}
-              </label>
-              {pfp && (
-                <button
-                  type="button"
-                  onClick={handleRemovePfp}
-                  className="border-none bg-transparent mt-3 text-zinc-400 light:text-slate-500 text-sm font-medium hover:underline"
-                >
-                  {t("profile_settings.remove_profile_picture")}
-                </button>
-              )}
+              </div>
             </div>
-          </div>
-          <ModalInput
-            label={t("profile_settings.username")}
-            name="username"
-            type="text"
-            placeholder="User's username"
-            minLength={USERNAME_MIN_LENGTH}
-            maxLength={USERNAME_MAX_LENGTH}
-            pattern={USERNAME_PATTERN}
-            defaultValue={user.username}
-            required
-            autoComplete="off"
-            hint={t("common.username_requirements")}
-          />
-          <ModalInput
-            label={t("profile_settings.new_password")}
-            name="password"
-            type="password"
-            placeholder={`${user.username}'s new password`}
-            minLength={8}
-            hint={t("profile_settings.password_description")}
-          />
-          <ModalTextarea
-            label="Bio"
-            name="bio"
-            placeholder="Tell us about yourself..."
-            defaultValue={user.bio}
-            rows={4}
-          />
-          <div className="flex gap-x-16">
-            <div className="flex flex-col gap-y-6">
-              <ThemePreference />
-              <LanguagePreference />
+            <ModalInput
+              label={t("profile_settings.username")}
+              name="username"
+              type="text"
+              placeholder="User's username"
+              minLength={USERNAME_MIN_LENGTH}
+              maxLength={USERNAME_MAX_LENGTH}
+              pattern={USERNAME_PATTERN}
+              defaultValue={user.username}
+              required
+              autoComplete="off"
+              hint={t("common.username_requirements")}
+            />
+            <ModalInput
+              label={t("profile_settings.new_password")}
+              name="password"
+              type="password"
+              placeholder={`${user.username}'s new password`}
+              minLength={8}
+              hint={t("profile_settings.password_description")}
+            />
+            <ModalTextarea
+              label="Bio"
+              name="bio"
+              placeholder="Tell us about yourself..."
+              defaultValue={user.bio}
+              rows={4}
+            />
+            <div className="flex gap-x-16">
+              <div className="flex flex-col gap-y-6">
+                <ThemePreference />
+                <LanguagePreference />
+              </div>
+              <div className="flex flex-col gap-y-6">
+                <AutoSubmitPreference />
+                <AutoSpeakPreference />
+              </div>
             </div>
-            <div className="flex flex-col gap-y-6">
-              <AutoSubmitPreference />
-              <AutoSpeakPreference />
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <ModalSecondaryButton type="button" onClick={hideModal}>
-            {t("profile_settings.cancel")}
-          </ModalSecondaryButton>
-          <ModalPrimaryButton type="submit">
-            {t("profile_settings.update_account")}
-          </ModalPrimaryButton>
-        </ModalFooter>
-      </form>
+          </ModalBody>
+          <ModalFooter>
+            <ModalSecondaryButton type="button" onClick={hideModal}>
+              {t("profile_settings.cancel")}
+            </ModalSecondaryButton>
+            <ModalPrimaryButton type="submit">
+              {t("profile_settings.update_account")}
+            </ModalPrimaryButton>
+          </ModalFooter>
+        </form>
+      )}
     </Modal>
+  );
+}
+
+function AccountTabs({ activeTab, onChange }) {
+  const { t } = useTranslation();
+  const tabs = [
+    { id: "profile", label: t("profile_settings.tabs.profile") },
+    { id: "memories", label: t("profile_settings.tabs.memories") },
+  ];
+  return (
+    <div className="flex items-center gap-x-1 p-1 rounded-lg bg-zinc-800 light:bg-slate-100 w-full shrink-0">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={`flex-1 h-[30px] rounded-md text-sm font-medium border-none cursor-pointer transition-colors duration-200 ${
+            activeTab === tab.id
+              ? "bg-zinc-700 light:bg-white text-zinc-50 light:text-slate-900"
+              : "bg-transparent text-zinc-400 light:text-slate-500 hover:text-zinc-100 light:hover:text-slate-700"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

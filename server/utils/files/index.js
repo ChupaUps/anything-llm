@@ -4,6 +4,7 @@ const { spawn } = require("child_process");
 const { v5: uuidv5, v4: uuidv4 } = require("uuid");
 const { Document } = require("../../models/documents");
 const { DocumentSyncQueue } = require("../../models/documentSyncQueue");
+const { isDocPathWithinFolder } = require("../workspaces/personal");
 const documentsPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, `../../storage/documents`)
@@ -42,12 +43,18 @@ async function fileData(filePath = null) {
   return JSON.parse(data);
 }
 
-function listFolders() {
+/**
+ * Lists the folders of the documents storage.
+ * @param {string|null} folderFilter - When set, only this top-level folder is listed. Used to scope a `default` user's view to their personal folder.
+ * @returns {{name: string, type: 'folder', items: any[]}}
+ */
+function listFolders(folderFilter = null) {
   if (!fs.existsSync(documentsPath)) fs.mkdirSync(documentsPath);
   const folders = [];
 
   for (const file of fs.readdirSync(documentsPath)) {
     if (path.extname(file) === ".md") continue;
+    if (folderFilter && file !== folderFilter) continue;
     const folderPath = path.resolve(documentsPath, file);
     if (!fs.lstatSync(folderPath).isDirectory()) continue;
 
@@ -488,15 +495,17 @@ async function getWatchedDocumentFilenames(filenames = []) {
  * `folder-a/report.json` and `folder-b/myreport.json` cannot be told apart by
  * suffix matching.
  * @param {string[]} docpaths - `folder/file.json` paths, as stored on the workspace
+ * @param {{folder?: string|null}} options - When `folder` is set, docpaths outside of it are skipped.
  * @returns {Promise<Array<object & {docpath: string}>>}
  */
-async function getDocumentsByDocPaths(docpaths = []) {
+async function getDocumentsByDocPaths(docpaths = [], { folder = null } = {}) {
   if (!docpaths.length) return [];
   const liveSyncAvailable = await DocumentSyncQueue.enabled();
   const results = [];
   const filenames = {};
 
   for (const docpath of docpaths) {
+    if (folder && !isDocPathWithinFolder(docpath, folder)) continue;
     const fullPath = path.resolve(documentsPath, normalizePath(docpath));
     if (!fs.existsSync(fullPath) || !isWithin(documentsPath, fullPath))
       continue;
@@ -576,7 +585,7 @@ function _rgRun(rgPath, args) {
  * matched literally.
  * @returns {Promise<Set<string>>} absolute file paths
  */
-function _rgFileSearch(rgPath, searchTerm) {
+function _rgFileSearch(rgPath, searchTerm, root = documentsPath) {
   const escaped = searchTerm.replace(/[[\]{}()*+?.\\^$|]/g, "\\$&");
   return _rgRun(rgPath, [
     "--files",
@@ -584,7 +593,7 @@ function _rgFileSearch(rgPath, searchTerm) {
     "--glob",
     `**/*${escaped}*.json`,
     "--",
-    documentsPath,
+    root,
   ]);
 }
 
@@ -597,7 +606,7 @@ function _rgFileSearch(rgPath, searchTerm) {
  * interpreted as an option.
  * @returns {Promise<Set<string>>} absolute file paths
  */
-function _rgContentSearch(rgPath, searchTerm) {
+function _rgContentSearch(rgPath, searchTerm, root = documentsPath) {
   return _rgRun(rgPath, [
     "--files-with-matches",
     "--no-ignore",
@@ -609,7 +618,7 @@ function _rgContentSearch(rgPath, searchTerm) {
     "*.json",
     "--",
     searchTerm,
-    documentsPath,
+    root,
   ]);
 }
 
@@ -621,12 +630,20 @@ function _rgContentSearch(rgPath, searchTerm) {
  * every filename in-process, which is exactly the full-directory scan lazy
  * loading exists to avoid. Only the files ripgrep actually returns are read.
  * @param {string} searchTerm
+ * @param {{folder?: string|null}} options - When `folder` is set, only that top-level folder is searched.
  * @returns {Promise<Array<{name: string, type: 'folder', items: any[]}>>} matches grouped by folder
  */
-async function searchDocuments(searchTerm = "") {
+async function searchDocuments(searchTerm = "", { folder = null } = {}) {
   const term = searchTerm?.trim();
   if (!term) return [];
   if (!fs.existsSync(documentsPath)) return [];
+
+  // A scoped search (personal users) roots ripgrep at their own folder and
+  // never touches the rest of the shared documents storage.
+  const searchRoot = folder
+    ? path.resolve(documentsPath, normalizePath(folder))
+    : documentsPath;
+  if (!fs.existsSync(searchRoot)) return [];
 
   let rgPath = null;
   try {
@@ -639,8 +656,8 @@ async function searchDocuments(searchTerm = "") {
   }
 
   const [fileHits, contentHits] = await Promise.all([
-    _rgFileSearch(rgPath, term),
-    _rgContentSearch(rgPath, term),
+    _rgFileSearch(rgPath, term, searchRoot),
+    _rgContentSearch(rgPath, term, searchRoot),
   ]);
 
   const hits = [...new Set([...fileHits, ...contentHits])]
@@ -653,13 +670,14 @@ async function searchDocuments(searchTerm = "") {
   // it cannot be embedded and is skipped.
   const byFolder = new Map();
   for (const absPath of hits) {
-    if (!isWithin(documentsPath, absPath)) continue;
+    if (!isWithin(searchRoot, absPath)) continue;
     const folderPath = path.dirname(absPath);
-    if (path.resolve(folderPath, "..") !== path.resolve(documentsPath))
-      continue;
-    const folder = path.basename(folderPath);
-    if (!byFolder.has(folder)) byFolder.set(folder, []);
-    byFolder.get(folder).push(absPath);
+    // Only documents that are exactly one level below the search root are
+    // addressable as `folder/file.json`, so they can be embedded.
+    if (path.resolve(folderPath) !== path.resolve(searchRoot)) continue;
+    const folderName = path.basename(folderPath);
+    if (!byFolder.has(folderName)) byFolder.set(folderName, []);
+    byFolder.get(folderName).push(absPath);
   }
 
   const liveSyncAvailable = await DocumentSyncQueue.enabled();

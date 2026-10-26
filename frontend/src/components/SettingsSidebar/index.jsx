@@ -276,6 +276,12 @@ const SidebarOptions = ({ user = null, t }) => (
           user={user}
           childOptions={[
             {
+              btnText: t("settings.dashboard"),
+              href: paths.settings.dashboard(),
+              flex: true,
+              roles: ["admin", "manager"],
+            },
+            {
               btnText: t("settings.users"),
               href: paths.settings.users(),
               roles: ["admin", "manager"],

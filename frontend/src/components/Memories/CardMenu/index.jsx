@@ -10,8 +10,10 @@ import { useTranslation } from "react-i18next";
  * @param {React.RefObject} props.buttonRef
  * @param {boolean} props.isWorkspace
  * @param {boolean} props.canMove - hide the move option when the target scope is full
+ * @param {boolean} props.pinned
  * @param {function} props.onEdit
  * @param {function} props.onMove
+ * @param {function} props.onTogglePin
  * @param {function} props.onDelete
  */
 export default function CardMenu({
@@ -19,8 +21,10 @@ export default function CardMenu({
   buttonRef,
   isWorkspace,
   canMove,
+  pinned,
   onEdit,
   onMove,
+  onTogglePin,
   onDelete,
 }) {
   const { t } = useTranslation();
@@ -39,6 +43,14 @@ export default function CardMenu({
       style={{ top: pos.top, left: pos.left }}
     >
       <MenuItem label={t("chat_window.memories.menu.edit")} onClick={onEdit} />
+      <MenuItem
+        label={
+          pinned
+            ? t("chat_window.memories.menu.unpin")
+            : t("chat_window.memories.menu.pin")
+        }
+        onClick={onTogglePin}
+      />
       {canMove && (
         <MenuItem
           label={

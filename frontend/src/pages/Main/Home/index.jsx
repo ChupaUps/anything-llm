@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { isMobile } from "react-device-detect";
 import { SidebarMobileHeader } from "@/components/Sidebar";
+import { REFETCH_WORKSPACES_EVENT } from "@/components/Sidebar/ActiveWorkspaces";
 import PromptInput, {
   PROMPT_INPUT_EVENT,
   PROMPT_INPUT_ID,
@@ -93,7 +94,15 @@ export default function Home() {
 
   useEffect(() => {
     async function init() {
-      const ws = await getTargetWorkspace();
+      let ws = await getTargetWorkspace();
+      // Default users work in their own personal workspace, so the first one is
+      // provisioned automatically. When their workspace quota is exhausted the
+      // page falls back to the "not assigned" state below.
+      if (!ws && user?.role === "default") {
+        ws = await createDefaultWorkspace(t("new-workspace.placeholder"));
+        if (ws) window.dispatchEvent(new CustomEvent(REFETCH_WORKSPACES_EVENT));
+      }
+
       if (ws) {
         const [suggestedMessages, { showAgentCommand }] = await Promise.all([
           Workspace.getSuggestedMessages(ws.slug),

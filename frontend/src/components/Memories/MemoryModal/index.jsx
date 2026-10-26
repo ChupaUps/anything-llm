@@ -10,6 +10,7 @@ import Modal, {
 } from "@/components/lib/Modal";
 
 /**
+ * Create/edit modal shared by the chat memories sidebar and the account block.
  * @param {Object} props
  * @param {boolean} props.isOpen
  * @param {function} props.onClose

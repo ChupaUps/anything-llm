@@ -1,11 +1,17 @@
 import { Plus } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "react-tooltip";
-import { useMemoriesContext, LIMITS } from "../MemoriesContext";
+import { useMemoriesContext } from "../MemoriesContext";
 
 export default function MemoryTabs() {
-  const { workspace, activeTab, setActiveTab, memories, openCreateModal } =
-    useMemoriesContext();
+  const {
+    workspace,
+    activeTab,
+    setActiveTab,
+    memories,
+    limits,
+    openCreateModal,
+  } = useMemoriesContext();
   const { t } = useTranslation();
   const workspaceName =
     workspace?.name || t("chat_window.memories.tab_workspace");
@@ -13,8 +19,8 @@ export default function MemoryTabs() {
   const globalCount = memories.global.length;
   const atLimit =
     activeTab === "workspace"
-      ? workspaceCount >= LIMITS.workspace
-      : globalCount >= LIMITS.global;
+      ? workspaceCount >= limits.workspace
+      : globalCount >= limits.global;
 
   return (
     <div className="flex items-center justify-between shrink-0 gap-2">
@@ -34,7 +40,7 @@ export default function MemoryTabs() {
             {workspaceName}
           </span>
           <span className="text-zinc-400 light:text-slate-600 font-normal">
-            ({workspaceCount}/{LIMITS.workspace})
+            ({workspaceCount}/{limits.workspace})
           </span>
         </button>
         <button
@@ -50,7 +56,7 @@ export default function MemoryTabs() {
             {t("chat_window.memories.tab_global")}
           </span>
           <span className="text-zinc-400 light:text-slate-600 font-normal">
-            ({globalCount}/{LIMITS.global})
+            ({globalCount}/{limits.global})
           </span>
         </button>
       </div>

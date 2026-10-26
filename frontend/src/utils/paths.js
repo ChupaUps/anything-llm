@@ -112,6 +112,9 @@ export default {
     return `${API_BASE}/docs`;
   },
   settings: {
+    dashboard: () => {
+      return `/settings/dashboard`;
+    },
     users: () => {
       return `/settings/users`;
     },

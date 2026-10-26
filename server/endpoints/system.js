@@ -46,10 +46,7 @@ const { getCustomModels } = require("../utils/helpers/customModels");
 const { WorkspaceChats } = require("../models/workspaceChats");
 const { WorkspaceThread } = require("../models/workspaceThread");
 const { WorkspaceParsedFiles } = require("../models/workspaceParsedFiles");
-const {
-  flexUserRoleValid,
-  ROLES,
-} = require("../utils/middleware/multiUserProtected");
+const { flexUserRoleValid, ROLES } = require("../utils/middleware/multiUserProtected");
 const { fetchPfp, determinePfpFilepath } = require("../utils/files/pfp");
 const { exportChatsAsType } = require("../utils/helpers/chat/convertTo");
 const { EventLogs } = require("../models/eventLogs");
@@ -71,6 +68,27 @@ const { isReservedCommand } = require("../utils/chats");
 const { AgentSkillWhitelist } = require("../models/agentSkillWhitelist");
 const { Memory } = require("../models/memory");
 const { dummyHashCompare } = require("../utils/helpers/dummyHashCompare");
+const {
+  scopedDocumentsFolder,
+  isDocPathWithinFolder,
+} = require("../utils/workspaces/personal");
+
+/**
+ * `default` users only ever see the documents of their personal folder. This
+ * checks that a `folder/file.json` name (or a bare folder name) belongs to that
+ * folder. Users with global access are always allowed.
+ * @param {{id: number, role: string}|null} user
+ * @param {string} name - document or folder name from the request
+ * @param {{folderOnly?: boolean}} options
+ * @returns {boolean}
+ */
+function canAccessDocumentsPath(user, name, { folderOnly = false } = {}) {
+  const folder = scopedDocumentsFolder(user);
+  if (!folder) return true;
+  if (!name || typeof name !== "string") return false;
+  if (folderOnly) return name === folder;
+  return isDocPathWithinFolder(name, folder);
+}
 
 function systemEndpoints(app) {
   if (!app) return;
@@ -415,10 +433,13 @@ function systemEndpoints(app) {
 
   app.delete(
     "/system/remove-document",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const { name } = reqBody(request);
+        if (!canAccessDocumentsPath(user, name))
+          return response.sendStatus(401).end();
         await purgeDocument(name);
         response.sendStatus(200).end();
       } catch (e) {
@@ -430,11 +451,15 @@ function systemEndpoints(app) {
 
   app.delete(
     "/system/remove-documents",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const { names } = reqBody(request);
-        for await (const name of names) await purgeDocument(name);
+        for await (const name of names) {
+          if (!canAccessDocumentsPath(user, name)) continue;
+          await purgeDocument(name);
+        }
         response.sendStatus(200).end();
       } catch (e) {
         console.error(e.message, e);
@@ -445,10 +470,13 @@ function systemEndpoints(app) {
 
   app.delete(
     "/system/remove-folder",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const { name } = reqBody(request);
+        if (!canAccessDocumentsPath(user, name, { folderOnly: true }))
+          return response.sendStatus(401).end();
         await purgeFolder(name);
         response.sendStatus(200).end();
       } catch (e) {
@@ -460,17 +488,22 @@ function systemEndpoints(app) {
 
   app.get(
     "/system/local-files",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
+        const scopedFolder = scopedDocumentsFolder(user);
         const { folder, offset, limit } = queryParams(request);
+        if (scopedFolder && folder && folder !== scopedFolder)
+          return response.sendStatus(401).end();
+
         if (folder) {
           // Passed through as-is: getDocumentsByFolder clamps the window and
           // understands `limit=all`.
           const result = await getDocumentsByFolder(folder, { offset, limit });
           response.status(result.code).json(result);
         } else {
-          const localFiles = listFolders();
+          const localFiles = listFolders(scopedFolder);
           response.status(200).json({ localFiles });
         }
       } catch (e) {
@@ -482,11 +515,14 @@ function systemEndpoints(app) {
 
   app.get(
     "/system/local-files/search",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const { q } = queryParams(request);
-        const results = await searchDocuments(q);
+        const results = await searchDocuments(q, {
+          folder: scopedDocumentsFolder(user),
+        });
         response.status(200).json({ results });
       } catch (e) {
         console.error(e.message, e);
@@ -497,11 +533,14 @@ function systemEndpoints(app) {
 
   app.post(
     "/system/local-files/by-docpaths",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const { docpaths = [] } = reqBody(request);
-        const documents = await getDocumentsByDocPaths(docpaths);
+        const documents = await getDocumentsByDocPaths(docpaths, {
+          folder: scopedDocumentsFolder(user),
+        });
         response.status(200).json({ documents });
       } catch (e) {
         console.error(e.message, e);
@@ -1516,6 +1555,25 @@ function systemEndpoints(app) {
           request.file.buffer,
           request.file.originalname || "audio.webm"
         );
+
+        // The real clip length is read from the container so accounting does
+        // not depend on the browser - the client value is only a fallback for
+        // installs without ffprobe.
+        const { measureAudioDuration } = require("../utils/SpeechToText/helpers");
+        const measuredSeconds = await measureAudioDuration(
+          request.file.buffer,
+          path.extname(request.file.originalname || "audio.webm")
+        );
+        const { UsageEvents } = require("../models/usageEvents");
+        await UsageEvents.logTranscription({
+          user: response.locals?.user ?? null,
+          audioSeconds:
+            measuredSeconds ?? Number(request.body?.durationSeconds ?? 0),
+          source: "stt",
+          provider: provider,
+          model: process.env.WHISPER_MODEL_PREF || null,
+        });
+
         return response.status(200).json({ success: true, text });
       } catch (error) {
         console.error("STT transcription error:", error);

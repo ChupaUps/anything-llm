@@ -906,11 +906,17 @@ const System = {
    * for transcription. Returns the transcribed text or an error string.
    * @param {Blob} audioBlob - Recorded audio (e.g., audio/webm) to transcribe.
    * @param {string} [filename] - Filename hint for the upload.
+   * @param {number} [durationSeconds] - Length of the clip, reported so usage can be tracked.
    * @returns {Promise<{text: string|null, error: string|null}>}
    */
-  transcribeAudio: async function (audioBlob, filename = "audio.webm") {
+  transcribeAudio: async function (
+    audioBlob,
+    filename = "audio.webm",
+    durationSeconds = 0
+  ) {
     const formData = new FormData();
     formData.append("audio", audioBlob, filename);
+    formData.append("durationSeconds", String(Number(durationSeconds) || 0));
     return fetch(`${API_BASE}/system/transcribe-audio`, {
       method: "POST",
       headers: baseHeaders(),

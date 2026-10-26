@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Admin from "@/models/admin";
-import { MessageLimitInput, RoleHintDisplay } from "../..";
+import { MessageLimitInput, RoleHintDisplay, WorkspaceLimitInput } from "../..";
 import { AUTH_USER } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
 import {
@@ -26,6 +26,9 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
     enabled: user.dailyMessageLimit !== null,
     limit: user.dailyMessageLimit || 10,
   });
+  const [workspaceLimit, setWorkspaceLimit] = useState(
+    user.workspaceLimit ?? 1
+  );
   const { t } = useTranslation();
 
   const handleUpdate = async (e) => {
@@ -42,6 +45,7 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
     } else {
       data.dailyMessageLimit = null;
     }
+    data.workspaceLimit = workspaceLimit;
 
     const { success, error } = await Admin.updateUser(user.id, data);
     if (success) {
@@ -114,6 +118,11 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
           enabled={messageLimit.enabled}
           limit={messageLimit.limit}
           updateState={setMessageLimit}
+        />
+        <WorkspaceLimitInput
+          role={role}
+          limit={workspaceLimit}
+          setLimit={setWorkspaceLimit}
         />
         {error && <p className="text-red-400 text-sm">Error: {error}</p>}
       </ModalBody>

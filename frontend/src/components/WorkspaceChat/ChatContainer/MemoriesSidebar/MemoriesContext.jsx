@@ -4,10 +4,7 @@ import useUser from "@/hooks/useUser";
 import System from "@/models/system";
 import Memory from "@/models/memory";
 
-export const LIMITS = {
-  workspace: 20,
-  global: 5,
-};
+const DEFAULT_LIMITS = { global: 15, workspace: 20, ttlDays: 90 };
 
 const MemoriesContext = createContext(null);
 
@@ -25,6 +22,7 @@ export function MemoriesProvider({ workspace, children }) {
   const canToggle = !user || user?.role === "admin";
 
   const [memories, setMemories] = useState({ global: [], workspace: [] });
+  const [limits, setLimits] = useState(DEFAULT_LIMITS);
   const [activeTab, setActiveTab] = useState("workspace");
   const [modalState, setModalState] = useState({ open: false, mode: "create" });
   const [editingMemory, setEditingMemory] = useState(null);
@@ -44,7 +42,8 @@ export function MemoriesProvider({ workspace, children }) {
   async function fetchMemories() {
     if (!workspace?.slug) return;
     const data = await Memory.forWorkspace(workspace.slug);
-    setMemories(data);
+    setMemories({ global: data.global, workspace: data.workspace });
+    if (data.limits) setLimits(data.limits);
   }
 
   useEffect(() => {
@@ -67,6 +66,13 @@ export function MemoriesProvider({ workspace, children }) {
   async function handleUpdate(memoryId, content) {
     const { memory } = await Memory.update(memoryId, { content });
     if (memory) fetchMemories();
+  }
+
+  async function handleTogglePin(memory) {
+    const { memory: updated } = await Memory.update(memory.id, {
+      pinned: !memory.pinned,
+    });
+    if (updated) fetchMemories();
   }
 
   async function handlePromote(memoryId) {
@@ -104,6 +110,7 @@ export function MemoriesProvider({ workspace, children }) {
     closeSidebar,
     canToggle,
     memories,
+    limits,
     activeTab,
     setActiveTab,
     activeMemories,
@@ -120,6 +127,7 @@ export function MemoriesProvider({ workspace, children }) {
     handleCreate,
     handleDelete,
     handleUpdate,
+    handleTogglePin,
     handlePromote,
     handleDemote,
   };

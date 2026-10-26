@@ -113,8 +113,9 @@ function UsersContainer() {
 
 const ROLE_HINT = {
   default: [
-    "Can only send chats with workspaces they are added to by admin or managers.",
-    "Cannot modify any settings at all.",
+    "Can create personal workspaces up to their workspace limit and upload documents or links into them.",
+    "Can only chat with workspaces they own or are added to by admin or managers.",
+    "Cannot modify any system-wide settings.",
   ],
   manager: [
     "Can view, create, and delete any workspaces and modify workspace-specific settings.",
@@ -183,6 +184,33 @@ export function MessageLimitInput({ enabled, limit, updateState, role }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Per-user quota of personal workspaces. Only `default` users are limited -
+ * admins and managers can always create as many workspaces as they want.
+ */
+export function WorkspaceLimitInput({ role, limit, setLimit }) {
+  if (role !== "default") return null;
+  return (
+    <div className="flex flex-col gap-y-1.5 w-full">
+      <label className="text-theme-text-primary text-sm font-semibold">
+        Personal workspaces
+      </label>
+      <p className="text-xs text-theme-text-secondary">
+        How many personal workspaces this user can create for their own
+        documents and links. Admins and managers are not limited.
+      </p>
+      <input
+        type="number"
+        onScroll={(e) => e.target.blur()}
+        onChange={(e) => setLimit(Number(e?.target?.value || 1))}
+        value={limit}
+        min={1}
+        className="w-full h-[34px] px-3.5 text-sm rounded-lg outline-none bg-zinc-800 border border-zinc-800 text-zinc-100 placeholder:text-zinc-400 light:bg-white light:border-slate-300 light:text-slate-900 light:placeholder:text-slate-400 focus:border-sky-500 light:focus:border-sky-500"
+      />
     </div>
   );
 }

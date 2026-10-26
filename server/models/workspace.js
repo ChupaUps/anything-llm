@@ -198,6 +198,11 @@ const Workspace = {
    */
   new: async function (name = null, creatorId = null, additionalFields = {}) {
     if (!name) return { workspace: null, message: "name cannot be null" };
+    // Personal-ness is decided by the calling route (a `default` user creating
+    // their own workspace), never by the request body, so it is read and
+    // stripped before generic field validation.
+    const isPersonal = Boolean(additionalFields.is_personal);
+    delete additionalFields.is_personal;
     var slug = this.slugify(name, { lower: true });
     slug = slug || uuidv4();
 
@@ -222,6 +227,8 @@ const Workspace = {
         data: {
           name: this.validations.name(name),
           chatMode: "automatic",
+          owner_id: creatorId ? Number(creatorId) : null,
+          is_personal: isPersonal,
           ...this.validateFields(additionalFields),
           slug,
         },
@@ -395,6 +402,15 @@ const Workspace = {
     } catch (error) {
       console.error(error.message);
       return false;
+    }
+  },
+
+  count: async function (clause = {}) {
+    try {
+      return await prisma.workspaces.count({ where: clause });
+    } catch (error) {
+      console.error(error.message);
+      return 0;
     }
   },
 

@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
 const { WorkspaceChats } = require("../../models/workspaceChats");
+const { UsageEvents } = require("../../models/usageEvents");
 const { getVectorDbClass, resolveProviderConnector } = require("../helpers");
 const { addChatCostToMetrics } = require("../helpers/modelPricing");
 const { writeResponseChunk } = require("../helpers/chat/responses");
@@ -876,6 +877,13 @@ async function streamChat({
       connector: LLMConnector,
     });
   }
+
+  await UsageEvents.logLLMUsage({
+    metrics,
+    user,
+    workspace,
+    source: "api",
+  });
 
   if (completeText?.length > 0) {
     const { chat } = await WorkspaceChats.new({

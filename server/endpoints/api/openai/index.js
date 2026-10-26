@@ -263,6 +263,13 @@ function apiOpenAICompatibleEndpoints(app) {
                 signal,
               });
 
+        const { UsageEvents } = require("../../../models/usageEvents");
+        await UsageEvents.logImageGeneration({
+          source: "api",
+          model: process.env.IMAGE_GEN_MODEL_PREF || null,
+          provider: process.env.IMAGE_GEN_PROVIDER || null,
+        });
+
         if (responseFormat === "blob") {
           if (result.notice)
             response.setHeader("X-Image-Notice", result.notice);

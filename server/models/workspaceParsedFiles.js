@@ -101,13 +101,14 @@ const WorkspaceParsedFiles = {
   },
 
   /**
-   * Moves a parsed file into custom-documents so it can be embedded and removes the parsed file record.
+   * Moves a parsed file into the documents folder so it can be embedded and removes the parsed file record.
    * @param {import("@prisma/client").users | null} user - The user performing the operation.
    * @param {number} fileId - The ID of the parsed file.
    * @param {import("@prisma/client").workspaces} workspace - The workspace the file belongs to.
+   * @param {{ folder?: string | null }} [options] - Target folder inside the documents directory.
    * @returns {Promise<string>} The document location, eg: custom-documents/my-file-uuid.json
    */
-  moveToDocuments: async function (user = null, fileId, workspace) {
+  moveToDocuments: async function (user = null, fileId, workspace, { folder = null } = {}) {
     try {
       const parsedFile = await this.get({
         id: parseInt(fileId),
@@ -125,16 +126,17 @@ const WorkspaceParsedFiles = {
       const sourceFile = path.join(directUploadsPath, path.basename(location));
       if (!fs.existsSync(sourceFile)) throw new Error("Source file not found");
 
-      // Move to custom-documents
-      const customDocsPath = path.join(documentsPath, "custom-documents");
-      if (!fs.existsSync(customDocsPath))
-        fs.mkdirSync(customDocsPath, { recursive: true });
+      // Move to the target documents folder (personal folder for scoped users)
+      const folderName = folder ? path.basename(folder) : "custom-documents";
+      const targetFolderPath = path.join(documentsPath, folderName);
+      if (!fs.existsSync(targetFolderPath))
+        fs.mkdirSync(targetFolderPath, { recursive: true });
 
-      // Copy the file to custom-documents
-      const targetPath = path.join(customDocsPath, path.basename(location));
+      // Copy the file to the target folder
+      const targetPath = path.join(targetFolderPath, path.basename(location));
       fs.copyFileSync(sourceFile, targetPath);
       fs.unlinkSync(sourceFile);
-      return `custom-documents/${path.basename(location)}`;
+      return `${folderName}/${path.basename(location)}`;
     } finally {
       await this.delete({
         id: parseInt(fileId),
@@ -149,11 +151,17 @@ const WorkspaceParsedFiles = {
    * @param {import("@prisma/client").users | null} user - The user performing the operation.
    * @param {number} fileId - The ID of the parsed file.
    * @param {import("@prisma/client").workspaces} workspace - The workspace the file belongs to.
+   * @param {{ folder?: string | null }} [options] - Target folder inside the documents directory.
    * @returns {Promise<{ success: boolean, error: string | null, document: import("@prisma/client").workspace_documents | null }>} The result of the operation.
    */
-  moveToDocumentsAndEmbed: async function (user = null, fileId, workspace) {
+  moveToDocumentsAndEmbed: async function (
+    user = null,
+    fileId,
+    workspace,
+    options = {}
+  ) {
     try {
-      const docpath = await this.moveToDocuments(user, fileId, workspace);
+      const docpath = await this.moveToDocuments(user, fileId, workspace, options);
       const {
         failedToEmbed = [],
         errors = [],

@@ -24,6 +24,7 @@ export default function UserButton() {
   const buttonRef = useRef();
   const [showMenu, setShowMenu] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [accountTab, setAccountTab] = useState("profile");
   const [supportEmail, setSupportEmail] = useState("");
 
   const handleClose = (event) => {
@@ -36,7 +37,8 @@ export default function UserButton() {
     }
   };
 
-  const handleOpenAccountModal = () => {
+  const handleOpenAccountModal = (tab = "profile") => {
+    setAccountTab(tab);
     setShowAccountSettings(true);
     setShowMenu(false);
   };
@@ -79,12 +81,22 @@ export default function UserButton() {
         >
           <div className="flex flex-col gap-y-2">
             {mode === "multi" && !!user && (
-              <button
-                onClick={handleOpenAccountModal}
-                className="border-none text-white hover:bg-theme-action-menu-item-hover w-full text-left px-4 py-1.5 rounded-md"
-              >
-                {t("profile_settings.account")}
-              </button>
+              <>
+                <button
+                  onClick={() => handleOpenAccountModal("profile")}
+                  type="button"
+                  className="border-none text-white hover:bg-theme-action-menu-item-hover w-full text-left px-4 py-1.5 rounded-md"
+                >
+                  {t("profile_settings.account")}
+                </button>
+                <button
+                  onClick={() => handleOpenAccountModal("memories")}
+                  type="button"
+                  className="border-none text-white hover:bg-theme-action-menu-item-hover w-full text-left px-4 py-1.5 rounded-md"
+                >
+                  {t("profile_settings.memories")}
+                </button>
+              </>
             )}
             <a
               href={supportEmail}
@@ -112,6 +124,7 @@ export default function UserButton() {
       {user && showAccountSettings && (
         <AccountModal
           user={user}
+          initialTab={accountTab}
           hideModal={() => setShowAccountSettings(false)}
         />
       )}

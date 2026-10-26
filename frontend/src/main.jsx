@@ -192,6 +192,15 @@ const router = createBrowserRouter([
       },
       // Manager routes
       {
+        path: "/settings/dashboard",
+        lazy: async () => {
+          const { default: AdminDashboard } = await import(
+            "@/pages/Admin/Dashboard"
+          );
+          return { element: <ManagerRoute Component={AdminDashboard} /> };
+        },
+      },
+      {
         path: "/settings/security",
         lazy: async () => {
           const { default: GeneralSecurity } = await import(

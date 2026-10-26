@@ -80,6 +80,7 @@ const TRANSLATIONS = {
     title: "Instance Settings",
     invites: "Invites",
     users: "Users",
+    dashboard: "Dashboard",
     workspaces: "Workspaces",
     "workspace-chats": "Workspace Chats",
     customization: "Customization",
@@ -137,8 +138,7 @@ const TRANSLATIONS = {
       cta: "contact the administrator",
       description:
         "To reset your password, contact your platform administrator using any of the contacts below.",
-      "not-configured":
-        "The administrator has not added contact details yet.",
+      "not-configured": "The administrator has not added contact details yet.",
       close: "Back to login",
       channels: {
         email: "Email",
@@ -937,7 +937,7 @@ const TRANSLATIONS = {
       "support-contacts": {
         title: "Password Recovery Contacts",
         description:
-          "Contacts shown to users when they click \"Forgot password\" on the login page. Enable and fill in only the channels you want to display.",
+          'Contacts shown to users when they click "Forgot password" on the login page. Enable and fill in only the channels you want to display.',
         show: "Show on login page",
         save: "Save",
         "save-success": "Password recovery contacts updated.",
@@ -1427,6 +1427,61 @@ const TRANSLATIONS = {
       occurred: "Occurred At",
     },
   },
+  dashboard: {
+    title: "Usage Dashboard",
+    description:
+      "Token, image and transcription consumption across the instance, broken down by day and by user.",
+    range: "Last {{days}} days",
+    error: "Could not load usage statistics.",
+    note: "Usage is recorded from the moment this build is running - chats, images and transcriptions made before that are not included unless historical data was imported.",
+    cards: {
+      tokensTotal: "Tokens used (all time)",
+      tokensPeriod: "Tokens in the reporting period",
+      imagesPeriod: "Images in the reporting period",
+      audioPeriod: "Audio transcribed in the reporting period",
+      prompt: "Prompt",
+      completion: "Completion",
+      since: "Since {{date}}",
+      imagesTotal: "{{count}} all time",
+      audioTotal: "{{duration}} all time",
+    },
+    period: {
+      label: "Reporting period",
+      range: "Since {{start}} (day {{day}})",
+      startDay: "Period start",
+      dayOption: "Day {{day}}",
+      adminOnly: "The administrator sets the start of the reporting period.",
+      saved: "Reporting period start saved",
+      saveFailed: "Could not save the reporting period start",
+    },
+    timezone: {
+      label: "Time zone",
+      current: "Chart days and period boundaries are calculated in {{zone}}.",
+      saved: "Time zone saved",
+      saveFailed: "Could not save the time zone",
+    },
+    charts: {
+      tokens: "Tokens per day",
+      images: "Images generated per day",
+      audio: "Audio transcribed per day (minutes)",
+    },
+    top: {
+      tokens: "Top 10 users by tokens (last 30 days)",
+      images: "Top 5 users by images (reporting period)",
+      audio: "Top 5 users by transcription (reporting period)",
+      user: "User",
+      tokensColumn: "Tokens",
+      imagesColumn: "Images",
+      audioColumn: "Audio",
+      unknown: "Unknown user",
+      empty: "No usage recorded for this period yet.",
+    },
+    units: {
+      tokens: "tokens",
+      images: "images",
+      minutes: "minutes",
+    },
+  },
   privacy: {
     title: "Privacy & Data-Handling",
     description:
@@ -1781,9 +1836,16 @@ const TRANSLATIONS = {
       },
       menu: {
         edit: "Edit",
+        pin: "Pin",
+        unpin: "Unpin",
         delete: "Delete",
         move_to_global: "Move to Global",
         move_to_workspace: "Move to Workspace",
+      },
+      card: {
+        pinned: "Pinned",
+        used: "Used {{date}}",
+        expires: "Expires {{date}}",
       },
       modal: {
         create_title: "Create Memory",
@@ -1824,6 +1886,29 @@ const TRANSLATIONS = {
     profile_updated: "Profile updated.",
     failed_update_user: "Failed to update user: {{error}}",
     account: "Account",
+    memories: "Memories",
+    tabs: {
+      profile: "Profile",
+      memories: "Memories",
+    },
+    memories_block: {
+      description:
+        "Facts the AI remembers about you and uses in conversations. They belong only to your account and are never shown to other users.",
+      disabled:
+        "Personalization is disabled by the server administrator, so memories are unavailable.",
+      personal: "Personal memories",
+      workspace: "Workspace memories",
+      add: "Add",
+      empty:
+        "No personal memories yet. Add a fact about yourself to make answers more precise.",
+      limit: "{{count}} of {{limit}}",
+      retention:
+        "Memories that go unused for {{days}} days are removed automatically. Pinned memories are never removed.",
+      load_failed: "Failed to load memories: {{error}}",
+      save_failed: "Failed to save the memory: {{error}}",
+      delete_failed: "Failed to delete the memory: {{error}}",
+      pin_failed: "Failed to change the pin state: {{error}}",
+    },
     support: "Support",
     signout: "Sign out",
   },

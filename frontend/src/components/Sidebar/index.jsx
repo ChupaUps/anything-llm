@@ -17,7 +17,6 @@ import { Tooltip } from "react-tooltip";
 import { createPortal } from "react-dom";
 
 export default function Sidebar() {
-  const { user } = useUser();
   const { logo } = useLogo();
   const sidebarRef = useRef(null);
   const { showSidebar, setShowSidebar, canToggleSidebar } = useSidebarToggle();
@@ -62,7 +61,7 @@ export default function Sidebar() {
               <div className="flex-grow flex flex-col min-w-[235px] min-h-0">
                 <div className="relative h-[calc(100%-60px)] flex flex-col w-full justify-between pt-[10px] overflow-y-scroll no-scroll">
                   <div className="flex flex-col gap-y-[14px]">
-                    <SearchBox user={user} showNewWsModal={showNewWsModal} />
+                    <SearchBox showNewWsModal={showNewWsModal} />
                     <ActiveWorkspaces />
                   </div>
                 </div>
@@ -169,10 +168,7 @@ export function SidebarMobileHeader() {
             <div className="h-full flex flex-col w-full justify-between pt-4 ">
               <div className="h-auto md:sidebar-items">
                 <div className=" flex flex-col gap-y-4 overflow-y-scroll no-scroll pb-[60px]">
-                  <NewWorkspaceButton
-                    user={user}
-                    showNewWsModal={showNewWsModal}
-                  />
+                  <NewWorkspaceButton showNewWsModal={showNewWsModal} />
                   <ActiveWorkspaces />
                 </div>
               </div>
@@ -188,9 +184,8 @@ export function SidebarMobileHeader() {
   );
 }
 
-function NewWorkspaceButton({ user, showNewWsModal }) {
+function NewWorkspaceButton({ showNewWsModal }) {
   const { t } = useTranslation();
-  if (!!user && user?.role === "default") return null;
 
   return (
     <div className="flex gap-x-2 items-center justify-between">

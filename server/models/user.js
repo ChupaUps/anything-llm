@@ -11,6 +11,7 @@ const { EventLogs } = require("./eventLogs");
  * @property {string} role
  * @property {boolean} suspended
  * @property {number|null} dailyMessageLimit
+ * @property {number} workspaceLimit
  */
 
 const User = {
@@ -23,6 +24,7 @@ const User = {
     "role",
     "suspended",
     "dailyMessageLimit",
+    "workspaceLimit",
     "bio",
   ],
   validations: {
@@ -67,6 +69,19 @@ const User = {
       }
       return limit;
     },
+    /**
+     * How many personal workspaces a `default` user may own. Admins and
+     * managers are not limited by this value.
+     */
+    workspaceLimit: (workspaceLimit = 1) => {
+      const limit = Number(workspaceLimit);
+      if (!Number.isInteger(limit) || limit < 1) {
+        throw new Error(
+          "Workspace limit must be a whole number greater than or equal to 1"
+        );
+      }
+      return limit;
+    },
     bio: (bio = "") => {
       if (!bio || typeof bio !== "string") return "";
       if (bio.length > 1000)
@@ -81,6 +96,8 @@ const User = {
         return Number(Boolean(value));
       case "dailyMessageLimit":
         return value === null ? null : Number(value);
+      case "workspaceLimit":
+        return Number(value);
       default:
         return String(value);
     }
@@ -110,6 +127,7 @@ const User = {
     password,
     role = "default",
     dailyMessageLimit = null,
+    workspaceLimit = 1,
     bio = "",
   }) {
     const passwordCheck = this.checkPasswordComplexity(password);
@@ -131,6 +149,7 @@ const User = {
           bio: this.validations.bio(bio),
           dailyMessageLimit:
             this.validations.dailyMessageLimit(dailyMessageLimit),
+          workspaceLimit: this.validations.workspaceLimit(workspaceLimit),
         },
       });
       return { user: this.filterFields(user), error: null };

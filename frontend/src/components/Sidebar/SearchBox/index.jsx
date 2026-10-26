@@ -14,7 +14,7 @@ const DEFAULT_SEARCH_RESULTS = {
 };
 
 const SEARCH_RESULT_SELECTED = "search-result-selected";
-export default function SearchBox({ user, showNewWsModal }) {
+export default function SearchBox({ showNewWsModal }) {
   const { t } = useTranslation();
   const searchRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,10 +70,7 @@ export default function SearchBox({ user, showNewWsModal }) {
           hidden={!!searchTerm}
         />
       </div>
-      <ShortWidthNewWorkspaceButton
-        user={user}
-        showNewWsModal={showNewWsModal}
-      />
+      <ShortWidthNewWorkspaceButton showNewWsModal={showNewWsModal} />
       <SearchResults
         searchResults={searchResults}
         searchTerm={searchTerm}
@@ -187,9 +184,8 @@ function SearchResultItem({ to, name, hint }) {
   );
 }
 
-function ShortWidthNewWorkspaceButton({ user, showNewWsModal }) {
+function ShortWidthNewWorkspaceButton({ showNewWsModal }) {
   const { t } = useTranslation();
-  if (!!user && user?.role === "default") return null;
 
   return (
     <>

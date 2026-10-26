@@ -794,6 +794,45 @@ class Provider {
       totals.outputCost = (totals.outputCost ?? 0) + cost.outputCost;
       totals.totalCost = (totals.totalCost ?? 0) + cost.totalCost;
     }
+
+    this.#recordUsageEvent({
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      totalCost: cost?.totalCost ?? null,
+    });
+  }
+
+  /**
+   * Persists this completion's usage for the admin dashboard. Usage is logged
+   * per call (not from the run totals) so a run with several completions is
+   * never counted twice. Failures are swallowed - accounting must never break
+   * agent execution.
+   * @param {{promptTokens: number, completionTokens: number, totalTokens: number, totalCost: number|null}} usage
+   */
+  #recordUsageEvent({
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    totalCost,
+  }) {
+    if (!totalTokens) return;
+    try {
+      // Required lazily: the models layer pulls in helpers that reach back here.
+      const { UsageEvents } = require("../../../../models/usageEvents");
+      UsageEvents.log({
+        kind: "llm",
+        source: "agent",
+        userId: this.invocation?.user_id ?? null,
+        workspaceId: this.invocation?.workspace_id ?? null,
+        model: this.model ?? null,
+        provider: this.constructor.name,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        totalCost,
+      });
+    } catch {}
   }
 
   /**

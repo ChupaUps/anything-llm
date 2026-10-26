@@ -12,6 +12,7 @@ const {
 const { reqBody, safeJsonParse, queryParams } = require("../../../utils/http");
 const { EventLogs } = require("../../../models/eventLogs");
 const { CollectorApi } = require("../../../utils/collectorApi");
+const { UsageEvents } = require("../../../models/usageEvents");
 const fs = require("fs");
 const path = require("path");
 const { Document } = require("../../../models/documents");
@@ -139,10 +140,12 @@ function apiDocumentEndpoints(app) {
           return;
         }
 
-        const { success, reason, documents } = await Collector.processDocument(
-          originalname,
-          metadata
-        );
+        const {
+          success,
+          reason,
+          documents,
+          audioSeconds = 0,
+        } = await Collector.processDocument(originalname, metadata);
 
         if (!success) {
           return response
@@ -150,6 +153,16 @@ function apiDocumentEndpoints(app) {
             .json({ success: false, error: reason, documents })
             .end();
         }
+
+        // API uploads are authenticated by key, so there is no session user -
+        // the audio length still counts towards the instance totals.
+        await UsageEvents.logTranscription({
+          user: response.locals?.user ?? null,
+          audioSeconds,
+          source: "document",
+          provider: process.env.WHISPER_PROVIDER || "local",
+          model: process.env.WHISPER_MODEL_PREF || null,
+        });
 
         Collector.log(
           `Document ${originalname} uploaded processed and successfully. It is now available in documents.`
@@ -288,16 +301,26 @@ function apiDocumentEndpoints(app) {
         }
 
         // Process the uploaded document with metadata
-        const { success, reason, documents } = await Collector.processDocument(
-          originalname,
-          metadata
-        );
+        const {
+          success,
+          reason,
+          documents,
+          audioSeconds = 0,
+        } = await Collector.processDocument(originalname, metadata);
         if (!success) {
           return response
             .status(500)
             .json({ success: false, error: reason, documents })
             .end();
         }
+
+        await UsageEvents.logTranscription({
+          user: response.locals?.user ?? null,
+          audioSeconds,
+          source: "document",
+          provider: process.env.WHISPER_PROVIDER || "local",
+          model: process.env.WHISPER_MODEL_PREF || null,
+        });
 
         // For each processed document, check if it is already in the desired folder.
         // If not, move it using similar logic as in the move-files endpoint.

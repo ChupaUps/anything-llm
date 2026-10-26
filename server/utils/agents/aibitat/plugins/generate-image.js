@@ -160,6 +160,16 @@ const generateImage = {
                 outputs: [output],
               });
 
+              const { UsageEvents } = require("../../../../models/usageEvents");
+              const invocation = this.super.handlerProps?.invocation ?? {};
+              await UsageEvents.logImageGeneration({
+                user: invocation.user_id ? { id: invocation.user_id } : null,
+                workspaceId: invocation.workspace_id ?? null,
+                source: "agent",
+                model: process.env.IMAGE_GEN_MODEL_PREF || null,
+                provider: process.env.IMAGE_GEN_PROVIDER || null,
+              });
+
               return `The image was generated and is already displayed to the user.${notice ? ` Note: ${notice}.` : ""} Confirm it is ready in one short sentence - do not describe the image or repeat the prompt.`;
             } catch (error) {
               this.super.socket?.send?.("imageGenerationCard", {

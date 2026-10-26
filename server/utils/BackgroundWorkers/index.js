@@ -13,6 +13,7 @@ class BackgroundService {
   name = "BackgroundWorkerService";
   static _instance = null;
   documentSyncEnabled = false;
+  memoryEnabled = false;
   memoryExtractionEnabled = false;
   #root = path.resolve(__dirname, "../../jobs");
   #scheduledJobTimers = new Map();
@@ -48,6 +49,13 @@ class BackgroundService {
     {
       name: "extract-memories",
       interval: process.env.MEMORY_EXTRACTION_INTERVAL || "3hr",
+    },
+  ];
+
+  #memoryPruneJobs = [
+    {
+      name: "prune-memories",
+      interval: process.env.MEMORY_PRUNE_INTERVAL || "6hr",
     },
   ];
 
@@ -109,6 +117,7 @@ class BackgroundService {
     const { ScheduledJobRun } = require("../../models/scheduledJobRun");
 
     this.documentSyncEnabled = await DocumentSyncQueue.enabled();
+    this.memoryEnabled = await SystemSettings.memoriesEnabled();
     this.memoryExtractionEnabled = await SystemSettings.autoMemoriesEnabled();
 
     // Mark any orphaned scheduled job runs as failed (server crashed mid-execution)
@@ -166,33 +175,51 @@ class BackgroundService {
   jobs() {
     const activeJobs = [...this.#alwaysRunJobs];
     if (this.memoryExtractionEnabled) activeJobs.push(...this.#memoryJobs);
+    if (this.memoryEnabled) activeJobs.push(...this.#memoryPruneJobs);
     if (this.documentSyncEnabled) activeJobs.push(...this.#documentSyncJobs);
     return activeJobs;
   }
 
   /**
-   * Sync the memory extraction job based on current settings.
-   * Called when memory_enabled or memory_auto_extraction changes.
-   * @param {boolean} enabled - The desired state (should the extraction job run?)
+   * Sync memory background jobs (extraction + TTL pruning) with the current
+   * settings. Settings validations run before their value is persisted, so the
+   * desired state can be passed in as overrides instead of re-reading the DB.
+   * @param {{memoryEnabled?: boolean, autoExtraction?: boolean}} [overrides]
    */
-  async syncMemoryJob(enabled) {
+  async syncMemoryJobs(overrides = {}) {
     if (!this.bree) return;
+    const { SystemSettings } = require("../../models/systemSettings");
 
-    const jobName = this.#memoryJobs[0].name;
+    this.memoryEnabled =
+      overrides.memoryEnabled ?? (await SystemSettings.memoriesEnabled());
+    this.memoryExtractionEnabled =
+      overrides.autoExtraction ?? (await SystemSettings.autoMemoriesEnabled());
+
+    await this.#syncJob(
+      this.#memoryJobs[0],
+      this.memoryEnabled && this.memoryExtractionEnabled
+    );
+    await this.#syncJob(this.#memoryPruneJobs[0], this.memoryEnabled);
+  }
+
+  /**
+   * Add and start, or stop and remove, a single Bree job.
+   * @param {{name: string, interval: string}} job
+   * @param {boolean} enabled
+   */
+  async #syncJob(job, enabled) {
     const isCurrentlyRunning = this.bree.config.jobs.some(
-      (j) => j.name === jobName
+      (j) => j.name === job.name
     );
 
     if (enabled && !isCurrentlyRunning) {
-      this.memoryExtractionEnabled = true;
-      await this.bree.add(this.#memoryJobs[0]);
-      await this.bree.start(jobName);
-      this.#log(`Added and started ${jobName} job`);
+      await this.bree.add(job);
+      await this.bree.start(job.name);
+      this.#log(`Added and started ${job.name} job`);
     } else if (!enabled && isCurrentlyRunning) {
-      this.memoryExtractionEnabled = false;
-      await this.bree.stop(jobName);
-      await this.bree.remove(jobName);
-      this.#log(`Stopped and removed ${jobName} job`);
+      await this.bree.stop(job.name);
+      await this.bree.remove(job.name);
+      this.#log(`Stopped and removed ${job.name} job`);
     }
   }
 

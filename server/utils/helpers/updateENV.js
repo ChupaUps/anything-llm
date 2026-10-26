@@ -1703,6 +1703,15 @@ function dumpENV() {
     // Memory extraction, scheduled job and document sync worker settings
     "MEMORY_EXTRACTION_INTERVAL",
     "MEMORY_IDLE_THRESHOLD_MS",
+
+    // Memory retention and capacity settings
+    "MEMORY_PRUNE_INTERVAL",
+    "MEMORY_TTL_DAYS",
+    "MEMORY_GLOBAL_LIMIT",
+    "MEMORY_WORKSPACE_LIMIT",
+    "MEMORY_INJECT_GLOBAL_LIMIT",
+    "MEMORY_INJECT_WORKSPACE_LIMIT",
+
     "SCHEDULED_JOB_MAX_CONCURRENT",
     "SCHEDULED_JOB_TIMEOUT_MS",
     "DOCUMENT_SYNC_STALE_AFTER_MS",

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Admin from "@/models/admin";
 import { userFromStorage } from "@/utils/request";
-import { MessageLimitInput, RoleHintDisplay } from "..";
+import { MessageLimitInput, RoleHintDisplay, WorkspaceLimitInput } from "..";
 import { useTranslation } from "react-i18next";
 import {
   USERNAME_MIN_LENGTH,
@@ -26,6 +26,7 @@ export default function NewUserModal({ closeModal }) {
     enabled: false,
     limit: 10,
   });
+  const [workspaceLimit, setWorkspaceLimit] = useState(1);
   const { t } = useTranslation();
 
   const handleCreate = async (e) => {
@@ -35,6 +36,7 @@ export default function NewUserModal({ closeModal }) {
     const form = new FormData(e.target);
     for (var [key, value] of form.entries()) data[key] = value;
     data.dailyMessageLimit = messageLimit.enabled ? messageLimit.limit : null;
+    data.workspaceLimit = workspaceLimit;
 
     const { user, error } = await Admin.newUser(data);
     if (!!user) window.location.reload();
@@ -98,6 +100,11 @@ export default function NewUserModal({ closeModal }) {
           enabled={messageLimit.enabled}
           limit={messageLimit.limit}
           updateState={setMessageLimit}
+        />
+        <WorkspaceLimitInput
+          role={role}
+          limit={workspaceLimit}
+          setLimit={setWorkspaceLimit}
         />
         {error && <p className="text-red-400 text-sm">Error: {error}</p>}
         <p className="text-zinc-300 light:text-slate-700 text-xs md:text-sm">

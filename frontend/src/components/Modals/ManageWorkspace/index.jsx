@@ -133,13 +133,12 @@ const ModalTabSwitcher = ({ selectedTab, setSelectedTab }) => {
 };
 
 export function useManageWorkspaceModal() {
-  const { user } = useUser();
   const [showing, setShowing] = useState(false);
 
   function showModal() {
-    if (user?.role !== "default") {
-      setShowing(true);
-    }
+    // Default users manage the documents of their own personal workspace, so
+    // the documents tab is available to every role.
+    setShowing(true);
   }
 
   function hideModal() {

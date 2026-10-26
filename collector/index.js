@@ -55,10 +55,15 @@ app.post(
         success,
         reason,
         documents = [],
+        audioSeconds = 0,
       } = await processSingleFile(targetFilename, options, metadata);
-      response
-        .status(200)
-        .json({ filename: targetFilename, success, reason, documents });
+      response.status(200).json({
+        filename: targetFilename,
+        success,
+        reason,
+        documents,
+        audioSeconds,
+      });
     } catch (e) {
       console.error(e);
       response.status(200).json({

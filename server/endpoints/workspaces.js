@@ -31,12 +31,18 @@ const {
   WorkspaceSuggestedMessages,
 } = require("../models/workspacesSuggestedMessages");
 const { validWorkspaceSlug } = require("../utils/middleware/validWorkspace");
+const {
+  canManageWorkspaceData,
+  scopedDocumentsFolder,
+  isDocPathWithinFolder,
+} = require("../utils/workspaces/personal");
 const { convertToChatHistory } = require("../utils/helpers/chat/responses");
 const { CollectorApi } = require("../utils/collectorApi");
 const { getTTSProvider } = require("../utils/TextToSpeech");
 const { getAudioFileInfo } = require("../utils/TextToSpeech/audioFormat");
 const { messageToSpeech } = require("../utils/TextToSpeech/messageToSpeech");
 const { WorkspaceThread } = require("../models/workspaceThread");
+const { UsageEvents } = require("../models/usageEvents");
 
 const truncate = require("truncate");
 const { purgeDocument } = require("../utils/files/purgeDocument");
@@ -51,14 +57,62 @@ function workspaceEndpoints(app) {
   if (!app) return;
   const responseCache = new Map();
 
+  /**
+   * Resolves the :slug workspace and rejects users that are not allowed to
+   * manage its RAG data. Admins and managers pass for any workspace, while a
+   * `default` user only passes for the personal workspaces they own.
+   * Resolved workspace is exposed as `response.locals.workspace`.
+   */
+  async function requireWorkspaceDataAccess(request, response, next) {
+    try {
+      const user = await userFromSession(request, response);
+      const { slug = "" } = request.params;
+      const workspace = multiUserMode(response)
+        ? await Workspace.getWithUser(user, { slug })
+        : await Workspace.get({ slug });
+
+      if (!workspace) return response.sendStatus(400).end();
+      if (!canManageWorkspaceData(user, workspace))
+        return response.sendStatus(401).end();
+
+      response.locals.workspace = workspace;
+      next();
+    } catch (e) {
+      console.error(e.message, e);
+      return response.sendStatus(500).end();
+    }
+  }
+
   app.post(
     "/workspace/new",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
     async (request, response) => {
       try {
         const user = await userFromSession(request, response);
         const { name = null } = reqBody(request);
-        const { workspace, message } = await Workspace.new(name, user?.id);
+
+        // Default users work in personal workspaces only and are limited by
+        // their per-user quota. Admins and managers are unlimited.
+        const isPersonal =
+          multiUserMode(response) && user?.role === ROLES.default;
+        if (isPersonal) {
+          const ownedWorkspaces = await Workspace.count({
+            owner_id: Number(user.id),
+            is_personal: true,
+          });
+          const limit = Number(user.workspaceLimit ?? 1);
+          if (ownedWorkspaces >= limit) {
+            response.status(200).json({
+              workspace: null,
+              message: `Workspace limit reached (${limit}). Ask an administrator to increase your workspace limit.`,
+            });
+            return;
+          }
+        }
+
+        const { workspace, message } = await Workspace.new(name, user?.id, {
+          is_personal: isPersonal,
+        });
         await Telemetry.sendTelemetry(
           "workspace_created",
           {
@@ -89,20 +143,16 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/:slug/update",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
+    ],
     async (request, response) => {
       try {
         const user = await userFromSession(request, response);
-        const { slug = null } = request.params;
         const data = reqBody(request);
-        const currWorkspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
-
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
-        }
+        const currWorkspace = response.locals.workspace;
 
         await Workspace.trackChange(currWorkspace, data, user);
         const { workspace, message } = await Workspace.update(
@@ -121,11 +171,13 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/upload",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
       handleFileUpload,
     ],
     async function (request, response) {
       try {
+        const user = await userFromSession(request, response);
         const Collector = new CollectorApi();
         const { originalname } = request.file;
 
@@ -153,18 +205,35 @@ function workspaceEndpoints(app) {
           return;
         }
 
-        const { success, reason, documents } = await Collector.processDocument(
-          originalname,
-          metadata
-        );
+        const {
+          success,
+          reason,
+          documents,
+          audioSeconds = 0,
+        } = await Collector.processDocument(originalname, metadata);
         if (!success) {
           response.status(500).json({ success: false, error: reason }).end();
           return;
         }
 
+        // Audio documents are transcribed during ingestion - the collector
+        // returns the length it measured before chunking the file. Non-audio
+        // uploads report 0 and are ignored.
+        await UsageEvents.logTranscription({
+          user: response.locals?.user ?? null,
+          audioSeconds,
+          source: "document",
+          provider: process.env.WHISPER_PROVIDER || "local",
+          model: process.env.WHISPER_MODEL_PREF || null,
+        });
+
         // When the upload is part of a folder upload, move the processed
         // documents from their default location into the target folder.
-        if (!!folderName) moveProcessedDocsToFolder(documents, folderName);
+        // A `default` user's documents always land in their personal folder so
+        // they never end up in (or are read from) another user's data.
+        const targetFolder =
+          scopedDocumentsFolder(user) ?? (!!folderName ? folderName : null);
+        if (!!targetFolder) moveProcessedDocsToFolder(documents, targetFolder);
 
         Collector.log(
           `Document ${originalname} uploaded processed and successfully. It is now available in documents.`
@@ -188,9 +257,14 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/:slug/upload-link",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
+    ],
     async (request, response) => {
       try {
+        const user = await userFromSession(request, response);
         const Collector = new CollectorApi();
         const { link = "" } = reqBody(request);
         const processingOnline = await Collector.online();
@@ -206,11 +280,19 @@ function workspaceEndpoints(app) {
           return;
         }
 
-        const { success, reason } = await Collector.processLink(link);
+        const { success, reason, documents = [] } = await Collector.processLink(
+          link
+        );
         if (!success) {
           response.status(500).json({ success: false, error: reason }).end();
           return;
         }
+
+        // Scraped pages are written to the shared documents storage, so a
+        // `default` user's pages are moved into their personal folder.
+        const personalFolder = scopedDocumentsFolder(user);
+        if (personalFolder && documents.length > 0)
+          moveProcessedDocsToFolder(documents, personalFolder);
 
         Collector.log(
           `Link ${link} uploaded processed and successfully. It is now available in documents.`
@@ -231,19 +313,32 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/:slug/update-embeddings",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
+    ],
     async (request, response) => {
       try {
         const user = await userFromSession(request, response);
-        const { slug = null } = request.params;
         const { adds = [], deletes = [] } = reqBody(request);
-        const currWorkspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
+        const currWorkspace = response.locals.workspace;
 
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
+        // A `default` user may only embed documents from their own storage
+        // folder, otherwise any document on the instance could be pulled into
+        // their workspace.
+        const scopedFolder = scopedDocumentsFolder(user);
+        if (scopedFolder) {
+          const invalidAdds = (adds || []).filter(
+            (docpath) => !isDocPathWithinFolder(docpath, scopedFolder)
+          );
+          if (invalidAdds.length > 0) {
+            response.status(400).json({
+              workspace: null,
+              message: "You can only add documents from your own workspace.",
+            });
+            return;
+          }
         }
 
         await Document.removeDocuments(
@@ -299,22 +394,15 @@ function workspaceEndpoints(app) {
     "/workspace/:slug",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
       workspaceDeletionProtection,
     ],
     async (request, response) => {
       try {
         const { slug = "" } = request.params;
-        const user = await userFromSession(request, response);
         const VectorDb = getVectorDbClass();
-        const workspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
-
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
-        }
+        const workspace = response.locals.workspace;
 
         await WorkspaceChats.delete({ workspaceId: Number(workspace.id) });
         await DocumentVectors.deleteForWorkspace(workspace.id);
@@ -344,20 +432,16 @@ function workspaceEndpoints(app) {
 
   app.delete(
     "/workspace/:slug/reset-vector-db",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
+    ],
     async (request, response) => {
       try {
         const { slug = "" } = request.params;
-        const user = await userFromSession(request, response);
         const VectorDb = getVectorDbClass();
-        const workspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
-
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
-        }
+        const workspace = response.locals.workspace;
 
         await DocumentVectors.deleteForWorkspace(workspace.id);
         await Document.delete({ workspaceId: Number(workspace.id) });
@@ -626,7 +710,11 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/:slug/suggested-messages",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
+    ],
     async (request, response) => {
       try {
         const { messages = [] } = reqBody(request);
@@ -657,8 +745,8 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/update-pin",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
     ],
     async (request, response) => {
       try {
@@ -834,21 +922,14 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/upload-and-embed",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
       handleFileUpload,
     ],
     async function (request, response) {
       try {
-        const { slug = null } = request.params;
         const user = await userFromSession(request, response);
-        const currWorkspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
-
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
-        }
+        const currWorkspace = response.locals.workspace;
 
         const Collector = new CollectorApi();
         const { originalname } = request.file;
@@ -865,12 +946,25 @@ function workspaceEndpoints(app) {
           return;
         }
 
-        const { success, reason, documents } =
-          await Collector.processDocument(originalname);
+        const {
+          success,
+          reason,
+          documents,
+          audioSeconds = 0,
+        } = await Collector.processDocument(originalname);
         if (!success || documents?.length === 0) {
           response.status(500).json({ success: false, error: reason }).end();
           return;
         }
+
+        await UsageEvents.logTranscription({
+          user: response.locals?.user ?? null,
+          workspaceId: currWorkspace.id,
+          audioSeconds,
+          source: "document",
+          provider: process.env.WHISPER_PROVIDER || "local",
+          model: process.env.WHISPER_MODEL_PREF || null,
+        });
 
         Collector.log(
           `Document ${originalname} uploaded processed and successfully. It is now available in documents.`
@@ -885,6 +979,11 @@ function workspaceEndpoints(app) {
         );
 
         const document = documents[0];
+        // Keep a `default` user's chat drop-and-embed uploads in their personal
+        // folder so the document is never picked up by another workspace.
+        const personalFolder = scopedDocumentsFolder(user);
+        if (personalFolder) moveProcessedDocsToFolder([document], personalFolder);
+
         const { failedToEmbed = [], errors = [] } = await Document.addDocuments(
           currWorkspace,
           [document.location],
@@ -912,20 +1011,35 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/remove-and-unembed",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
       handleFileUpload,
     ],
     async function (request, response) {
       try {
-        const { slug = null } = request.params;
         const body = reqBody(request);
         const user = await userFromSession(request, response);
-        const currWorkspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
+        const currWorkspace = response.locals.workspace;
 
         if (!currWorkspace || !body.documentLocation)
           return response.sendStatus(400).end();
+
+        // `default` users may only purge documents that live in their own
+        // folder. Anything else is simply unembedded from the workspace rather
+        // than deleted from the shared library.
+        const scopedFolder = scopedDocumentsFolder(user);
+        if (
+          scopedFolder &&
+          !isDocPathWithinFolder(body.documentLocation, scopedFolder)
+        ) {
+          await Document.removeDocuments(
+            currWorkspace,
+            [body.documentLocation],
+            user?.id
+          );
+          response.status(200).end();
+          return;
+        }
 
         // Will delete the document from the entire system + wil unembed it.
         await purgeDocument(body.documentLocation);
@@ -1029,8 +1143,8 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/embed-progress",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
     ],
     async (request, response) => {
       try {
@@ -1060,8 +1174,8 @@ function workspaceEndpoints(app) {
     "/workspace/:slug/embed-queue",
     [
       validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
+      flexUserRoleValid([ROLES.all]),
+      requireWorkspaceDataAccess,
     ],
     async (request, response) => {
       try {

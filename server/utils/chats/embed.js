@@ -3,6 +3,7 @@ const { getVectorDbClass, resolveProviderConnector } = require("../helpers");
 const { addChatCostToMetrics } = require("../helpers/modelPricing");
 const { chatPrompt, sourceIdentifier } = require("./index");
 const { EmbedChats } = require("../../models/embedChats");
+const { UsageEvents } = require("../../models/usageEvents");
 const {
   convertToPromptHistory,
   writeResponseChunk,
@@ -227,6 +228,12 @@ async function streamChatWithForEmbed(
       connector: LLMConnector,
     });
   }
+
+  await UsageEvents.logLLMUsage({
+    metrics,
+    workspace: embed.workspace,
+    source: "embed",
+  });
 
   if (completeText?.length > 0) {
     await EmbedChats.new({

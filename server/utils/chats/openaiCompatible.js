@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
 const { WorkspaceChats } = require("../../models/workspaceChats");
+const { UsageEvents } = require("../../models/usageEvents");
 const { getVectorDbClass, resolveProviderConnector } = require("../helpers");
 const { addChatCostToMetrics } = require("../helpers/modelPricing");
 const { writeResponseChunk } = require("../helpers/chat/responses");
@@ -225,6 +226,8 @@ async function chatSync({
     workspace,
     connector: LLMConnector,
   });
+
+  await UsageEvents.logLLMUsage({ metrics, workspace, source: "api" });
 
   if (!textResponse) {
     return formatJSON(
@@ -506,6 +509,8 @@ async function streamChat({
     workspace,
     connector: LLMConnector,
   });
+
+  await UsageEvents.logLLMUsage({ metrics, workspace, source: "api" });
 
   if (completeText?.length > 0) {
     const { chat } = await WorkspaceChats.new({

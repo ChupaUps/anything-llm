@@ -104,14 +104,12 @@ async function processGroup(groupChats) {
     );
     const globalMemories = await Memory.globalForUser(userId);
 
-    const globalSlots = Memory.GLOBAL_LIMIT - globalMemories.length;
-    if (
-      globalSlots <= 0 &&
-      workspaceMemories.length >= Memory.WORKSPACE_LIMIT
-    ) {
-      log(`${tag} is at max capacity. Skipping.`);
-      return;
-    }
+    // Full scopes are not skipped: Memory.applyExtractedMemories evicts the
+    // least-recently-used non-pinned memories so fresh facts still land.
+    const globalSlots = Math.max(
+      0,
+      Memory.GLOBAL_LIMIT - globalMemories.length
+    );
 
     log(
       `Running Observer for ${tag} using ${llm.provider}/${llm.model} on ${chats.length} chat(s).`
@@ -169,11 +167,10 @@ async function processGroup(groupChats) {
     const result = await Memory.applyExtractedMemories(
       userId,
       workspaceId,
-      finalMemories,
-      globalSlots
+      finalMemories
     );
     log(
-      `Applied ${result.workspaceCount} workspace + ${result.globalCount} global + ${result.updatedCount} updated memories for ${tag} in "${workspace.name}". Reviewed ${chats.length} chat(s).`
+      `Applied ${result.workspaceCount} workspace + ${result.globalCount} global + ${result.updatedCount} updated + ${result.evictedCount} evicted memories for ${tag} in "${workspace.name}". Reviewed ${chats.length} chat(s).`
     );
   } catch (error) {
     log(`Error processing ${tag}: ${error.message}`);

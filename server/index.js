@@ -2,6 +2,10 @@ process.env.NODE_ENV === "development"
   ? require("dotenv").config({ path: `.env.${process.env.NODE_ENV}` })
   : require("dotenv").config();
 
+// Applies the administrator-selected time zone before any request is served so
+// log timestamps, Intl formatting and date buckets all agree.
+require("./utils/time/zone").applyStoredSystemTimeZone();
+
 require("./utils/logger")();
 require("./utils/boot/patchSdkTimeouts")();
 require("./utils/helpers/modelPricing"); // boots the model pricing cache refresh

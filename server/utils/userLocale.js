@@ -20,6 +20,26 @@ const DEFAULT_LANG = "ru";
 
 class _UserMetaCache {
   #cache = new Map();
+  // Follows the administrator-selected system time zone so tools that fall back
+  // to the cache default stay aligned with the rest of the instance.
+  #defaultTimeZone = DEFAULT_TIMEZONE;
+
+  /**
+   * Sets the fallback zone used when a user has not supplied one yet.
+   * @param {string} timeZone - IANA identifier
+   * @returns {string} the zone in effect
+   */
+  setDefaultTimeZone(timeZone) {
+    if (this.#isValidTimezone(timeZone)) this.#defaultTimeZone = timeZone;
+    return this.#defaultTimeZone;
+  }
+
+  /**
+   * @returns {string} the fallback zone used by the cache
+   */
+  get defaultTimeZone() {
+    return this.#defaultTimeZone;
+  }
 
   /**
    * Validate that a string is a recognised IANA timezone identifier.
@@ -59,7 +79,7 @@ class _UserMetaCache {
       timezone:
         timezone && this.#isValidTimezone(timezone)
           ? timezone
-          : current.timezone || DEFAULT_TIMEZONE,
+          : current.timezone || this.#defaultTimeZone,
       lang: lang || current.lang || DEFAULT_LANG,
     });
   }
@@ -74,7 +94,7 @@ class _UserMetaCache {
   get(userId) {
     return (
       this.#cache.get(this.#key(userId)) || {
-        timezone: DEFAULT_TIMEZONE,
+        timezone: this.#defaultTimeZone,
         lang: DEFAULT_LANG,
       }
     );
