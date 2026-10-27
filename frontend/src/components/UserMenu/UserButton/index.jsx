@@ -11,7 +11,9 @@ import {
   AUTH_TIMESTAMP,
   AUTH_TOKEN,
   AUTH_USER,
+  CLOSE_ACCOUNT_MODAL_EVENT,
   LAST_VISITED_WORKSPACE,
+  OPEN_ACCOUNT_MODAL_EVENT,
   USER_PROMPT_INPUT_MAP,
 } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
@@ -62,6 +64,26 @@ export default function UserButton() {
     fetchSupportEmail();
   }, []);
 
+  // The product tour drives the account modal through window events so it can
+  // walk a new user through the profile without faking clicks.
+  useEffect(() => {
+    function handleOpen(event) {
+      setAccountTab(event.detail?.tab || "profile");
+      setShowAccountSettings(true);
+      setShowMenu(false);
+    }
+    function handleClose() {
+      setShowAccountSettings(false);
+    }
+
+    window.addEventListener(OPEN_ACCOUNT_MODAL_EVENT, handleOpen);
+    window.addEventListener(CLOSE_ACCOUNT_MODAL_EVENT, handleClose);
+    return () => {
+      window.removeEventListener(OPEN_ACCOUNT_MODAL_EVENT, handleOpen);
+      window.removeEventListener(CLOSE_ACCOUNT_MODAL_EVENT, handleClose);
+    };
+  }, []);
+
   if (mode === null) return null;
   return (
     <div className="absolute top-3 right-4 md:top-9 md:right-10 w-fit h-fit z-40">
@@ -69,6 +91,7 @@ export default function UserButton() {
         ref={buttonRef}
         onClick={() => setShowMenu(!showMenu)}
         type="button"
+        data-tour="user-menu"
         className="uppercase transition-all duration-300 w-[35px] h-[35px] text-base font-semibold rounded-full flex items-center bg-theme-action-menu-bg hover:bg-theme-action-menu-item-hover justify-center text-white p-2 hover:border-slate-100 hover:border-opacity-50 border-transparent border"
       >
         {mode === "multi" ? <UserDisplay /> : <Person size={14} />}

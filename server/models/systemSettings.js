@@ -57,6 +57,7 @@ const SystemSettings = {
     "disabled_agent_skills",
     "disabled_filesystem_skills",
     "disabled_create_files_skills",
+    "disabled_code_interpreter_skills",
     "disabled_gmail_skills",
     "gmail_agent_config",
     "disabled_google_calendar_skills",
@@ -87,6 +88,7 @@ const SystemSettings = {
     "disabled_agent_skills",
     "disabled_filesystem_skills",
     "disabled_create_files_skills",
+    "disabled_code_interpreter_skills",
     "disabled_gmail_skills",
     "gmail_agent_config",
     "disabled_google_calendar_skills",
@@ -320,6 +322,15 @@ const SystemSettings = {
         return JSON.stringify(skills);
       } catch {
         console.error(`Could not validate disabled create files skills.`);
+        return JSON.stringify([]);
+      }
+    },
+    disabled_code_interpreter_skills: (updates) => {
+      try {
+        const skills = updates.split(",").filter((skill) => !!skill);
+        return JSON.stringify(skills);
+      } catch {
+        console.error(`Could not validate disabled code interpreter skills.`);
         return JSON.stringify([]);
       }
     },

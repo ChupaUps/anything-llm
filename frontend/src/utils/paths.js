@@ -103,6 +103,9 @@ export default {
       agentConfig: (slug) => {
         return `/workspace/${slug}/settings/agent-config`;
       },
+      dataConnectors: (slug) => {
+        return `/workspace/${slug}/settings/data-connectors`;
+      },
     },
     thread: (wsSlug, threadSlug) => {
       return `/workspace/${wsSlug}/t/${threadSlug}`;

@@ -40,7 +40,7 @@ import {
 } from "@/utils/chat/reasoningEffort";
 import MemoriesSidebar from "@/components/WorkspaceChat/ChatContainer/MemoriesSidebar";
 
-async function getTargetWorkspace() {
+async function getTargetWorkspace(user = null, personalWorkspaceName = null) {
   const lastVisited = safeJsonParse(
     localStorage.getItem(LAST_VISITED_WORKSPACE)
   );
@@ -49,7 +49,11 @@ async function getTargetWorkspace() {
     if (workspace) return workspace;
   }
 
-  const workspaces = await Workspace.all();
+  const workspaces = await Workspace.all({ personalWorkspaceName });
+  // A `default` user's own space is their primary workspace, so it wins over
+  // the shared workspaces they were invited to.
+  if (user?.role === "default")
+    return workspaces.find((ws) => ws.is_personal) ?? workspaces[0] ?? null;
   return workspaces.length > 0 ? workspaces[0] : null;
 }
 
@@ -94,7 +98,7 @@ export default function Home() {
 
   useEffect(() => {
     async function init() {
-      let ws = await getTargetWorkspace();
+      let ws = await getTargetWorkspace(user, t("new-workspace.placeholder"));
       // Default users work in their own personal workspace, so the first one is
       // provisioned automatically. When their workspace quota is exhausted the
       // page falls back to the "not assigned" state below.

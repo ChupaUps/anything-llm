@@ -14,6 +14,7 @@ const {
   USER_AGENT,
   WORKSPACE_AGENT,
   agentSkillsFromSystemSettings,
+  externalDataSkillIfAvailable,
 } = require("./defaults");
 const { AgentHandler } = require(".");
 const {
@@ -424,6 +425,9 @@ class EphemeralAgentHandler extends AgentHandler {
 
     this.#funcsToLoad = [
       ...(await agentSkillsFromSystemSettings()),
+      // Workspace-scoped tool for the external systems (1C, Bitrix24) the owner
+      // connected in the workspace settings.
+      ...(await externalDataSkillIfAvailable(this.#workspace)),
       ...ImportedPlugin.activeImportedPlugins(),
       ...AgentFlows.activeFlowPlugins(),
       ...(await new MCPCompatibilityLayer().activeMCPServers()),

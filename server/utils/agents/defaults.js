@@ -32,6 +32,11 @@ const SKILL_FILTER_CONFIG = {
       require("./aibitat/plugins/create-files/lib").isToolAvailable(),
     disabledSettingKey: "disabled_create_files_skills",
   },
+  "code-interpreter": {
+    getAvailability: () =>
+      require("./aibitat/plugins/code-interpreter/lib").isToolAvailable(),
+    disabledSettingKey: "disabled_code_interpreter_skills",
+  },
   "gmail-agent": {
     getAvailability: async () =>
       require("./aibitat/plugins/gmail/lib").GmailBridge.isToolAvailable(),
@@ -94,6 +99,7 @@ const WORKSPACE_AGENT = {
       functions: [
         ...(await agentSkillsFromSystemSettings()),
         ...clarifyingQuestionsSkills,
+        ...(await externalDataSkillIfAvailable(workspace)),
         ...ImportedPlugin.activeImportedPlugins(),
         ...AgentFlows.activeFlowPlugins(),
         ...(await new MCPCompatibilityLayer().activeMCPServers()),
@@ -101,6 +107,22 @@ const WORKSPACE_AGENT = {
     };
   },
 };
+
+/**
+ * The external-data tool is not a toggleable system skill: it is only useful
+ * when the workspace owner connected at least one external system (1C,
+ * Bitrix24) in the workspace settings, and it is scoped to that workspace.
+ * @param {import("@prisma/client").workspaces | null} workspace
+ * @returns {Promise<string[]>}
+ */
+async function externalDataSkillIfAvailable(workspace = null) {
+  if (!workspace?.id) return [];
+  const {
+    WorkspaceDataConnector,
+  } = require("../../models/workspaceDataConnector");
+  if (!(await WorkspaceDataConnector.hasEnabled(workspace.id))) return [];
+  return [AgentPlugins.externalData.name];
+}
 
 /**
  * Conditionally include the request-user-input sub-tools in the workspace agent's
@@ -267,5 +289,6 @@ module.exports = {
   USER_AGENT,
   WORKSPACE_AGENT,
   agentSkillsFromSystemSettings,
+  externalDataSkillIfAvailable,
   resolveAgentSkill,
 };

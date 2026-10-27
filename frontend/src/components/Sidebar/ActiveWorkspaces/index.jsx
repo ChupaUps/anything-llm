@@ -12,8 +12,13 @@ import useUser from "@/hooks/useUser";
 import ThreadContainer from "./ThreadContainer";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import showToast from "@/utils/toast";
-import { LAST_VISITED_WORKSPACE } from "@/utils/constants";
+import {
+  CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT,
+  LAST_VISITED_WORKSPACE,
+  OPEN_WORKSPACE_UPLOAD_MODAL_EVENT,
+} from "@/utils/constants";
 import { safeJsonParse } from "@/utils/request";
+import { useTranslation } from "react-i18next";
 
 export const REFETCH_WORKSPACES_EVENT = "refetchWorkspaces";
 
@@ -25,12 +30,17 @@ export default function ActiveWorkspaces() {
   const [selectedWs, setSelectedWs] = useState(null);
   const { showing, showModal, hideModal } = useManageWorkspaceModal();
   const { user } = useUser();
+  const { t } = useTranslation();
   const isInWorkspaceSettings = !!useMatch("/workspace/:slug/settings/:tab");
   const isHomePage = !!useMatch("/");
 
   useEffect(() => {
     async function getWorkspaces() {
-      const workspaces = await Workspace.all();
+      // The listing provisions the personal workspace of a `default` user that
+      // does not have one yet, so the name is sent in the current UI language.
+      const workspaces = await Workspace.all({
+        personalWorkspaceName: t("new-workspace.placeholder"),
+      });
       setLoading(false);
       setWorkspaces(Workspace.orderWorkspaces(workspaces));
     }
@@ -43,6 +53,40 @@ export default function ActiveWorkspaces() {
     return () =>
       window.removeEventListener(REFETCH_WORKSPACES_EVENT, getWorkspaces);
   }, []);
+
+  // The product tour points at the upload button of the personal workspace, so
+  // it opens and closes the documents modal through these window events.
+  useEffect(() => {
+    function handleOpenUploadModal() {
+      const personal = workspaces.find((workspace) => workspace.is_personal);
+      if (!personal) return;
+      setSelectedWs(personal);
+      showModal();
+    }
+
+    function handleCloseUploadModal() {
+      hideModal();
+    }
+
+    window.addEventListener(
+      OPEN_WORKSPACE_UPLOAD_MODAL_EVENT,
+      handleOpenUploadModal
+    );
+    window.addEventListener(
+      CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT,
+      handleCloseUploadModal
+    );
+    return () => {
+      window.removeEventListener(
+        OPEN_WORKSPACE_UPLOAD_MODAL_EVENT,
+        handleOpenUploadModal
+      );
+      window.removeEventListener(
+        CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT,
+        handleCloseUploadModal
+      );
+    };
+  }, [workspaces]);
 
   if (loading) {
     return (
@@ -73,7 +117,9 @@ export default function ActiveWorkspaces() {
     );
     if (!success) {
       showToast("Failed to reorder workspaces", "error");
-      Workspace.all().then((workspaces) => setWorkspaces(workspaces));
+      Workspace.all({
+        personalWorkspaceName: t("new-workspace.placeholder"),
+      }).then((workspaces) => setWorkspaces(workspaces));
     }
   }
 
@@ -103,6 +149,7 @@ export default function ActiveWorkspaces() {
           <div
             role="list"
             aria-label="Workspaces"
+            data-tour="workspace-list"
             className="flex flex-col gap-y-2"
             ref={provided.innerRef}
             {...provided.droppableProps}
@@ -129,6 +176,11 @@ export default function ActiveWorkspaces() {
                         <Link
                           to={paths.workspace.chat(workspace.slug)}
                           aria-current={isActive ? "page" : ""}
+                          data-tour={
+                            workspace.is_personal
+                              ? "personal-workspace"
+                              : undefined
+                          }
                           className={`
                             transition-all duration-[200ms]
                             flex flex-grow w-[75%] gap-x-2 py-[6px] pl-[4px] pr-[6px] rounded-[4px] text-white justify-start items-center
@@ -177,6 +229,11 @@ export default function ActiveWorkspaces() {
                                     setSelectedWs(workspace);
                                     showModal();
                                   }}
+                                  data-tour={
+                                    workspace.is_personal
+                                      ? "workspace-upload"
+                                      : undefined
+                                  }
                                   data-tooltip-id="upload-workspace"
                                   data-tooltip-content="Upload documents to this workspace for RAG indexing"
                                   className={`group/upload border-none rounded-md flex items-center justify-center ml-auto p-[2px] ${isActive ? "hover:bg-zinc-500 light:hover:bg-sky-800/30" : "hover:bg-zinc-500 light:hover:bg-slate-400"}`}
@@ -185,35 +242,50 @@ export default function ActiveWorkspaces() {
                                     className={`h-[20px] w-[20px] ${isActive ? "text-zinc-400 hover:text-white light:text-blue-700 light:group-hover/upload:text-blue-900" : "text-zinc-400 hover:text-white light:text-slate-600 light:group-hover/upload:text-slate-950"}`}
                                   />
                                 </button>
-                                {user?.role !== "default" && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      navigate(
-                                        isInWorkspaceSettings
-                                          ? paths.workspace.chat(workspace.slug)
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    navigate(
+                                      isInWorkspaceSettings
+                                        ? paths.workspace.chat(workspace.slug)
+                                        : user?.role === "default"
+                                          ? paths.workspace.settings.dataConnectors(
+                                              workspace.slug
+                                            )
                                           : paths.workspace.settings.generalAppearance(
                                               workspace.slug
                                             )
-                                      );
-                                    }}
-                                    className={`group/gear rounded-md flex items-center justify-center ml-auto p-[2px] ${isActive ? "hover:bg-zinc-500 light:hover:bg-sky-800/30" : "hover:bg-zinc-500 light:hover:bg-slate-400"}`}
-                                    aria-label="General appearance settings"
-                                    data-tooltip-id="gear-workspace"
-                                    data-tooltip-content="General appearance settings"
-                                  >
-                                    <GearSix
-                                      color={
-                                        isInWorkspaceSettings &&
-                                        workspace.slug === slug
-                                          ? "#46C8FF"
-                                          : undefined
-                                      }
-                                      className={`h-[20px] w-[20px] ${isActive ? "text-zinc-400 hover:text-white light:text-blue-700 light:group-hover/gear:text-blue-900" : "text-zinc-400 hover:text-white light:text-slate-600 light:group-hover/gear:text-slate-950"}`}
-                                    />
-                                  </button>
-                                )}
+                                    );
+                                  }}
+                                  className={`group/gear rounded-md flex items-center justify-center ml-auto p-[2px] ${isActive ? "hover:bg-zinc-500 light:hover:bg-sky-800/30" : "hover:bg-zinc-500 light:hover:bg-slate-400"}`}
+                                  aria-label={
+                                    user?.role === "default"
+                                      ? "Data & API connections"
+                                      : "General appearance settings"
+                                  }
+                                  data-tour={
+                                    workspace.is_personal
+                                      ? "workspace-settings"
+                                      : undefined
+                                  }
+                                  data-tooltip-id="gear-workspace"
+                                  data-tooltip-content={
+                                    user?.role === "default"
+                                      ? "Data & API connections"
+                                      : "General appearance settings"
+                                  }
+                                >
+                                  <GearSix
+                                    color={
+                                      isInWorkspaceSettings &&
+                                      workspace.slug === slug
+                                        ? "#46C8FF"
+                                        : undefined
+                                    }
+                                    className={`h-[20px] w-[20px] ${isActive ? "text-zinc-400 hover:text-white light:text-blue-700 light:group-hover/gear:text-blue-900" : "text-zinc-400 hover:text-white light:text-slate-600 light:group-hover/gear:text-slate-950"}`}
+                                  />
+                                </button>
                               </div>
                             )}
                           </div>

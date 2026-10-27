@@ -128,6 +128,103 @@ function adminEndpoints(app) {
     }
   );
 
+  // Personal workspaces of a single user. The settings dialog lists them so an
+  // admin or manager opens the chat itself instead of only seeing a count.
+  app.get(
+    "/admin/user/:id/workspaces",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      try {
+        const user = await User.get({ id: Number(request.params.id) });
+        if (!user)
+          return response
+            .status(200)
+            .json({ workspaces: [], error: "User not found" });
+
+        const workspaces = await Workspace.where(
+          { owner_id: Number(user.id), is_personal: true },
+          null,
+          { id: "asc" }
+        );
+        response.status(200).json({
+          workspaces: workspaces.map(({ id, name, slug, createdAt }) => ({
+            id,
+            name,
+            slug,
+            createdAt,
+          })),
+          error: null,
+        });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  // Creates one more personal workspace for the user. The slug is derived from
+  // the login (`ivan`, `ivan-2`, `ivan-3`, ...) so links never repeat.
+  app.post(
+    "/admin/user/:id/workspaces",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      try {
+        const currUser = await userFromSession(request, response);
+        const user = await User.get({ id: Number(request.params.id) });
+        if (!user)
+          return response
+            .status(200)
+            .json({ workspace: null, error: "User not found" });
+
+        const canModify = validCanModify(currUser, user);
+        if (!canModify.valid)
+          return response
+            .status(200)
+            .json({ workspace: null, error: canModify.error });
+
+        if (user.role !== ROLES.default)
+          return response.status(200).json({
+            workspace: null,
+            error: "Personal workspaces exist only for default users.",
+          });
+
+        // The free slug doubles as the name, so the link of every workspace
+        // still points back to the login that owns it.
+        const slug = await Workspace.uniquePersonalSlug(user);
+        const { workspace, message } = await Workspace.new(slug, user.id, {
+          is_personal: true,
+          ownerUsername: user.username,
+        });
+        if (!workspace)
+          return response
+            .status(200)
+            .json({ workspace: null, error: message });
+
+        // An extra space was granted on purpose, so the quota follows the
+        // workspaces that actually exist instead of blocking the user later.
+        const owned = await Workspace.count({
+          owner_id: user.id,
+          is_personal: true,
+        });
+        if (owned > Number(user.workspaceLimit ?? 1))
+          await User.update(user.id, { workspaceLimit: owned });
+
+        await EventLogs.logEvent(
+          "workspace_created",
+          {
+            workspaceName: workspace.name || "Unknown Workspace",
+            createdBy: currUser.username,
+          },
+          currUser.id
+        );
+        response.status(200).json({ workspace, error: null });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
   app.delete(
     "/admin/user/:id",
     [validatedRequest, strictMultiUserRoleValid([ROLES.admin, ROLES.manager])],
@@ -420,6 +517,9 @@ function adminEndpoints(app) {
               requestedSettings[label] = safeJsonParse(setting?.value, []);
               break;
             case "disabled_create_files_skills":
+              requestedSettings[label] = safeJsonParse(setting?.value, []);
+              break;
+            case "disabled_code_interpreter_skills":
               requestedSettings[label] = safeJsonParse(setting?.value, []);
               break;
             case "disabled_gmail_skills":

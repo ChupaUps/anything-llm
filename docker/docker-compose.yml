@@ -6,6 +6,9 @@ networks:
 
 volumes:
   pgdata:
+  # Unix socket used to drive the code interpreter sandbox. The sandbox has no
+  # network at all, so the socket is the only way to reach it.
+  ci-socket:
 
 services:
   postgres:
@@ -47,6 +50,10 @@ services:
       - "../server/storage:/app/server/storage"
       - "../collector/hotdir/:/app/collector/hotdir"
       - "../collector/outputs/:/app/collector/outputs"
+      - "ci-socket:/sock:ro"
+    environment:
+      CODE_INTERPRETER_SOCKET: /sock/ci.sock
+      CODE_INTERPRETER_TOKEN: ${CODE_INTERPRETER_TOKEN:-}
     user: "${UID:-1000}:${GID:-1000}"
     ports:
       - "3001:3001"
@@ -55,7 +62,37 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      code-interpreter:
+        condition: service_started
     networks:
       - anything-llm
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  # Sandboxed Python runtime for the "code-interpreter" agent skill.
+  # network_mode: none + read_only + cap_drop keeps agent-generated code away
+  # from the app, its storage, its credentials and the internet.
+  code-interpreter:
+    container_name: anythingllm-code-interpreter
+    restart: unless-stopped
+    build:
+      context: ../.
+      dockerfile: ./docker/code-interpreter/Dockerfile
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2
+    tmpfs:
+      - "/work:size=512m,mode=1777"
+      - "/tmp:size=64m,mode=1777"
+    volumes:
+      - "ci-socket:/sock"
+    environment:
+      SANDBOX_TOKEN: ${CODE_INTERPRETER_TOKEN:-}
+      SANDBOX_MEM_LIMIT_MB: ${CODE_INTERPRETER_MEM_LIMIT_MB:-1536}
+      SANDBOX_MAX_CONCURRENT: ${CODE_INTERPRETER_MAX_CONCURRENT:-2}

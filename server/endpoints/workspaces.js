@@ -1,5 +1,6 @@
 const {
   reqBody,
+  queryParams,
   multiUserMode,
   userFromSession,
   safeJsonParse,
@@ -112,6 +113,9 @@ function workspaceEndpoints(app) {
 
         const { workspace, message } = await Workspace.new(name, user?.id, {
           is_personal: isPersonal,
+          // Personal workspace slugs are derived from the login so the
+          // identifier always points back to its owner.
+          ownerUsername: isPersonal ? user.username : null,
         });
         await Telemetry.sendTelemetry(
           "workspace_created",
@@ -473,6 +477,16 @@ function workspaceEndpoints(app) {
     async (request, response) => {
       try {
         const user = await userFromSession(request, response);
+
+        // `default` users always get a personal workspace of their own - also
+        // accounts created before personal workspaces existed and users that
+        // only belong to shared workspaces. The localized display name is
+        // passed by the client so the created workspace matches the UI.
+        if (multiUserMode(response) && user?.role === ROLES.default) {
+          const { personalWorkspaceName } = queryParams(request);
+          await Workspace.ensurePersonalWorkspace(user, personalWorkspaceName);
+        }
+
         const workspaces = multiUserMode(response)
           ? await Workspace.whereWithUser(user)
           : await Workspace.where();

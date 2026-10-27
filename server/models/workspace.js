@@ -13,6 +13,10 @@ function isNullOrNaN(value) {
   return isNaN(value);
 }
 
+// In-flight personal workspace provisioning per user id. Two page loads at the
+// same time (sidebar + home) must not create two workspaces for one user.
+const personalWorkspaceLocks = new Map();
+
 /**
  * @typedef {Object} Workspace
  * @property {number} id - The ID of the workspace
@@ -190,10 +194,92 @@ const Workspace = {
   },
 
   /**
+   * The slug base of a user's personal workspaces. It is derived from the login
+   * so the identifier of a personal workspace always points back to the account
+   * that owns it. Unlike the regular name-based slugs the login is normalized
+   * straight to `a-z0-9` groups (`iordanjan.m` -> `iordanjan-m`) so the
+   * identifier stays readable in URLs. Logins without latin characters fall
+   * back to the user id.
+   * @param {{id: number, username: string|null}|null} user - object with the login
+   * @returns {string}
+   */
+  personalSlugBase: function (user = null) {
+    const base = String(user?.username || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return base || `user-${user?.id}`;
+  },
+
+  /**
+   * First free slug for a personal workspace: `<login>`, `<login>-2`, ...
+   * @param {{id: number, username: string|null}} user
+   * @returns {Promise<string>}
+   */
+  uniquePersonalSlug: async function (user = null) {
+    const base = this.personalSlugBase(user);
+    for (let index = 1; index < 1000; index++) {
+      const candidate = index === 1 ? base : `${base}-${index}`;
+      if ((await this.count({ slug: candidate })) === 0) return candidate;
+    }
+    return `${base}-${Date.now()}`;
+  },
+
+  /**
+   * The first personal workspace owned by a user, if any.
+   * @param {number} ownerId
+   * @returns {Promise<object|null>}
+   */
+  personalForOwner: async function (ownerId = null) {
+    if (!ownerId) return null;
+    const owned = await prisma.workspaces.findMany({
+      where: { owner_id: Number(ownerId), is_personal: true },
+      orderBy: { id: "asc" },
+    });
+    return owned[0] ?? null;
+  },
+
+  /**
+   * Guarantees that a user owns a personal workspace. Accounts that predate
+   * personal workspaces - or that only belong to shared workspaces - get one on
+   * first use, so nobody has to create it by hand. Concurrent calls for the same
+   * user share one provisioning run.
+   * @param {{id: number, username: string|null, workspaceLimit: number}|null} user
+   * @param {string|null} name - display name, defaults to "My Workspace"
+   * @returns {Promise<object|null>} the workspace or null when the quota is 0
+   */
+  ensurePersonalWorkspace: async function (user = null, name = null) {
+    if (!user?.id) return null;
+    const lockKey = String(user.id);
+    if (personalWorkspaceLocks.has(lockKey))
+      return personalWorkspaceLocks.get(lockKey);
+
+    const provisioning = (async () => {
+      const existing = await this.personalForOwner(user.id);
+      if (existing) return existing;
+      if (Number(user.workspaceLimit ?? 1) < 1) return null;
+
+      const { workspace } = await this.new(name || "My Workspace", user.id, {
+        is_personal: true,
+        ownerUsername: user.username,
+      });
+      return workspace;
+    })();
+
+    personalWorkspaceLocks.set(lockKey, provisioning);
+    try {
+      return await provisioning;
+    } finally {
+      personalWorkspaceLocks.delete(lockKey);
+    }
+  },
+
+  /**
    * Create a new workspace.
    * @param {string} name - The name of the workspace.
    * @param {number} creatorId - The ID of the user creating the workspace.
    * @param {Object} additionalFields - Additional fields to apply to the workspace - will be validated.
+   * @param {string|null} additionalFields.ownerUsername - login of the owner, used to build the personal slug.
    * @returns {Promise<{workspace: Object | null, message: string | null}>} A promise that resolves to an object containing the created workspace and an error message if applicable.
    */
   new: async function (name = null, creatorId = null, additionalFields = {}) {
@@ -203,13 +289,22 @@ const Workspace = {
     // stripped before generic field validation.
     const isPersonal = Boolean(additionalFields.is_personal);
     delete additionalFields.is_personal;
-    var slug = this.slugify(name, { lower: true });
+    const ownerUsername = additionalFields.ownerUsername ?? null;
+    delete additionalFields.ownerUsername;
+
+    // Personal workspaces are identified by the login of their owner, so their
+    // slug comes from the username instead of the (localized) display name.
+    var slug = isPersonal
+      ? await this.uniquePersonalSlug({ id: creatorId, username: ownerUsername })
+      : this.slugify(name, { lower: true });
     slug = slug || uuidv4();
 
-    const existingBySlug = await this.get({ slug });
-    if (existingBySlug !== null) {
-      const slugSeed = Math.floor(10000000 + Math.random() * 90000000);
-      slug = this.slugify(`${name}-${slugSeed}`, { lower: true });
+    if (!isPersonal) {
+      const existingBySlug = await this.get({ slug });
+      if (existingBySlug !== null) {
+        const slugSeed = Math.floor(10000000 + Math.random() * 90000000);
+        slug = this.slugify(`${name}-${slugSeed}`, { lower: true });
+      }
     }
 
     // If system prompt wasn't sent, apply the system default system prompt
@@ -450,7 +545,12 @@ const Workspace = {
         ...(limit !== null ? { take: limit } : {}),
         ...(orderBy !== null ? { orderBy } : {}),
       });
-      return workspaces;
+      // A user's own workspace is their primary one, so it is listed first.
+      return workspaces.sort(
+        (a, b) =>
+          Number(Boolean(b.is_personal)) - Number(Boolean(a.is_personal)) ||
+          a.id - b.id
+      );
     } catch (error) {
       console.error(error.message);
       return [];

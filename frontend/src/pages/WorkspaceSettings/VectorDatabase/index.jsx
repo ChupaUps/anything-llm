@@ -30,7 +30,7 @@ export default function VectorDatabase({ workspace }) {
         onSave={handleUpdate}
         className="w-1/2 flex flex-col gap-y-[32px]"
       >
-        <div className="flex items-start gap-x-5">
+        <div className="flex items-start gap-x-5" data-tour="workspace-vector">
           <VectorDBIdentifier workspace={workspace} />
           <VectorCount reload={true} workspace={workspace} />
         </div>

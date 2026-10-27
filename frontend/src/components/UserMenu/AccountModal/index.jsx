@@ -2,7 +2,7 @@ import { useLanguageOptions } from "@/hooks/useLanguageOptions";
 import usePfp from "@/hooks/usePfp";
 import System from "@/models/system";
 import Appearance from "@/models/appearance";
-import { AUTH_USER } from "@/utils/constants";
+import { AUTH_USER, START_PRODUCT_TOUR_EVENT } from "@/utils/constants";
 import showToast from "@/utils/toast";
 import { Info, Plus } from "@phosphor-icons/react";
 import Modal, {
@@ -37,6 +37,12 @@ export default function AccountModal({
   const { pfp, setPfp } = usePfp();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // The product tour opens the modal on a specific tab, so keep following the
+  // prop when the parent asks for another one while the modal is already open.
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -103,7 +109,9 @@ export default function AccountModal({
       />
       <AccountTabs activeTab={activeTab} onChange={setActiveTab} />
       {activeTab === "memories" ? (
-        <MemoriesSettings />
+        <div className="w-full" data-tour="account-memories">
+          <MemoriesSettings />
+        </div>
       ) : (
         <form onSubmit={handleUpdate} className="flex flex-col gap-y-5">
           <ModalBody>
@@ -174,7 +182,7 @@ export default function AccountModal({
               defaultValue={user.bio}
               rows={4}
             />
-            <div className="flex gap-x-16">
+            <div className="flex gap-x-16" data-tour="account-preferences">
               <div className="flex flex-col gap-y-6">
                 <ThemePreference />
                 <LanguagePreference />
@@ -186,12 +194,25 @@ export default function AccountModal({
             </div>
           </ModalBody>
           <ModalFooter>
-            <ModalSecondaryButton type="button" onClick={hideModal}>
-              {t("profile_settings.cancel")}
-            </ModalSecondaryButton>
-            <ModalPrimaryButton type="submit">
-              {t("profile_settings.update_account")}
-            </ModalPrimaryButton>
+            <button
+              type="button"
+              onClick={() => {
+                hideModal();
+                window.dispatchEvent(new CustomEvent(START_PRODUCT_TOUR_EVENT));
+              }}
+              title={t("product_tour.restart_hint")}
+              className="border-none bg-transparent p-0 text-sm font-medium text-zinc-400 hover:text-zinc-100 light:text-slate-500 light:hover:text-slate-900 transition-colors duration-200"
+            >
+              {t("product_tour.restart")}
+            </button>
+            <div className="flex items-center gap-x-2">
+              <ModalSecondaryButton type="button" onClick={hideModal}>
+                {t("profile_settings.cancel")}
+              </ModalSecondaryButton>
+              <ModalPrimaryButton type="submit">
+                {t("profile_settings.update_account")}
+              </ModalPrimaryButton>
+            </div>
           </ModalFooter>
         </form>
       )}
@@ -206,7 +227,10 @@ function AccountTabs({ activeTab, onChange }) {
     { id: "memories", label: t("profile_settings.tabs.memories") },
   ];
   return (
-    <div className="flex items-center gap-x-1 p-1 rounded-lg bg-zinc-800 light:bg-slate-100 w-full shrink-0">
+    <div
+      data-tour="account-tabs"
+      className="flex items-center gap-x-1 p-1 rounded-lg bg-zinc-800 light:bg-slate-100 w-full shrink-0"
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}

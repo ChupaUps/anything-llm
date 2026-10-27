@@ -16,7 +16,8 @@
     "lint:check": "eslint .",
     "swagger": "node ./swagger/init.js",
     "migrate:sqlite2pg": "node scripts/migrate-sqlite-to-postgres.js",
-    "backfill:usage": "node scripts/backfill-usage-events.js"
+    "backfill:usage": "node scripts/backfill-usage-events.js",
+    "backfill:workspaces": "node scripts/backfill-personal-workspaces.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

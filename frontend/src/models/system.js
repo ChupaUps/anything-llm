@@ -887,6 +887,21 @@ const System = {
   },
 
   /**
+   * Checks if the code-interpreter sandbox is reachable.
+   * The skill is only usable when the code-interpreter service is running.
+   * @returns {Promise<boolean>}
+   */
+  isCodeInterpreterAvailable: async function () {
+    return fetch(`${API_BASE}/agent-skills/code-interpreter/is-available`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => res?.available ?? false)
+      .catch(() => false);
+  },
+
+  /**
    * Checks if image generation is available.
    * Image generation is only available when an image generation provider is configured.
    * @returns {Promise<boolean>}

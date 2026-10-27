@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Admin from "@/models/admin";
 import { MessageLimitInput, RoleHintDisplay, WorkspaceLimitInput } from "../..";
+import PersonalWorkspaces from "./PersonalWorkspaces";
 import { AUTH_USER } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
 import {
@@ -124,6 +125,13 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
           limit={workspaceLimit}
           setLimit={setWorkspaceLimit}
         />
+        {role === "default" && (
+          <PersonalWorkspaces
+            user={user}
+            limit={workspaceLimit}
+            onLimitChange={setWorkspaceLimit}
+          />
+        )}
         {error && <p className="text-red-400 text-sm">Error: {error}</p>}
       </ModalBody>
       <ModalFooter>

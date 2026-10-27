@@ -4,6 +4,7 @@ import GenericSkillPanel from "./GenericSkillPanel";
 import DefaultSkillPanel from "./DefaultSkillPanel";
 import FileSystemSkillPanel from "./FileSystemSkillPanel";
 import CreateFileSkillPanel from "./CreateFileSkillPanel";
+import CodeInterpreterSkillPanel from "./CodeInterpreterSkillPanel";
 import GMailSkillPanel from "./GMailSkillPanel";
 import GoogleCalendarSkillPanel from "./GoogleCalendarSkillPanel";
 import OutlookSkillPanel from "./OutlookSkillPanel";
@@ -16,6 +17,7 @@ import {
   FilePlus,
   CalendarCheck,
   ImageSquare,
+  Terminal,
 } from "@phosphor-icons/react";
 import RAGImage from "@/media/agents/rag-memory.png";
 import SummarizeImage from "@/media/agents/view-summarize.png";
@@ -68,6 +70,7 @@ export const getDefaultSkills = (t) => ({
  * @param {object} options - The options for the configurable skills.
  * @param {boolean} options.fileSystemAgentAvailable - Whether the file system agent is available.
  * @param {boolean} options.createFilesAgentAvailable - Whether the create files agent is available.
+ * @param {boolean} options.codeInterpreterAvailable - Whether the code interpreter sandbox is reachable.
  * @param {boolean} options.imageGenerationAvailable - Whether an image generation provider is
  * configured. Only the in-chat skills menu passes this - the admin page always lists the skill so
  * it can be enabled before a provider is set up.
@@ -78,6 +81,7 @@ export const getConfigurableSkills = (
   {
     fileSystemAgentAvailable = true,
     createFilesAgentAvailable = true,
+    codeInterpreterAvailable = true,
     imageGenerationAvailable = true,
   } = {}
 ) => ({
@@ -99,6 +103,15 @@ export const getConfigurableSkills = (
       skill: "create-files-agent",
       icon: FilePlus,
       image: GenerateSaveImages,
+    },
+  }),
+  ...(codeInterpreterAvailable && {
+    "code-interpreter": {
+      title: t("agent.skill.codeInterpreter.title"),
+      description: t("agent.skill.codeInterpreter.description"),
+      component: CodeInterpreterSkillPanel,
+      skill: "code-interpreter",
+      icon: Terminal,
     },
   }),
   "create-chart": {

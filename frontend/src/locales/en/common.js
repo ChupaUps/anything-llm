@@ -65,6 +65,19 @@ const TRANSLATIONS = {
     search: "Search",
     username_requirements:
       "Username must be 2-64 characters, start with a lowercase letter, and only contain lowercase letters, numbers, underscores, hyphens, and periods.",
+    personalWorkspaces: {
+      title: "Personal workspaces",
+      description:
+        "Every workspace is a separate chat of this user with its own link.",
+      usage: "{{used}} of {{limit}} used",
+      empty: "No personal workspaces yet",
+      add: "Add",
+      addHint:
+        "Create one more workspace. The link is built from the login and never repeats.",
+      open: "Open",
+      created: "Workspace created: /workspace/{{slug}}",
+      createError: "Could not create the workspace",
+    },
     loading: "Loading",
     refresh: "Refresh",
     noResults: "No results found",
@@ -138,7 +151,8 @@ const TRANSLATIONS = {
       cta: "contact the administrator",
       description:
         "To reset your password, contact your platform administrator using any of the contacts below.",
-      "not-configured": "The administrator has not added contact details yet.",
+      "not-configured":
+        "The administrator has not added contact details yet.",
       close: "Back to login",
       channels: {
         email: "Email",
@@ -196,6 +210,108 @@ const TRANSLATIONS = {
     vector: "Vector Database",
     members: "Members",
     agent: "Agent Configuration",
+    dataConnectors: "Data & API",
+  },
+  dataConnector: {
+    title: "Data & API",
+    description:
+      "Connect 1C, Bitrix24 (webhook or OAuth application) or any other service by address and key. The model pulls live data with GET requests during the conversation.",
+    multiHint:
+      "Several connections can be active at once: 1C and Bitrix24 work in the same chat - the agent picks the right system or combines their data.",
+    agentHint:
+      "Data is available in the Agent (automatic) chat mode: the agent calls the connection itself when an answer needs fresh records from the system.",
+    add: "Add connection",
+    empty:
+      "No connections yet. Add the first one - for example a Bitrix24 deals feed or a 1C catalog.",
+    addTitle: "New connection",
+    editTitle: "Edit connection",
+    formSubtitle:
+      "Provide the address and access key, test the response and save the generated schema.",
+    name: "Name",
+    namePlaceholder: "For example: 1C · Products",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "What this data returns",
+    descriptionHint: "Helps the model understand when to use this connection.",
+    provider: "System",
+    provider_1c: "1C",
+    provider_bitrix24: "Bitrix24",
+    provider_generic: "Custom API",
+    namePreset_1c: "1C · Data",
+    namePreset_bitrix24_webhook: "Bitrix24 · Webhook",
+    namePreset_bitrix24_oauth: "Bitrix24 · OAuth",
+    namePreset_generic: "API · Data",
+    variant: "Connection type",
+    variant_bitrix24_webhook: "Inbound webhook",
+    variant_bitrix24_oauth: "OAuth application",
+    variantHint_bitrix24_webhook:
+      "Webhook address with the token inside: Bitrix24 → Developer resources → Other → Inbound webhook.",
+    variantHint_bitrix24_oauth:
+      "Local application token: sent as the auth parameter and renewed when it expires.",
+    url: "Address (GET)",
+    urlPlaceholder_1c:
+      "http://server/base/odata/standard.odata/Catalog_Products",
+    urlPlaceholder_bitrix24_webhook:
+      "https://portal.bitrix24.com/rest/1/xxxxxxxxxxxx/",
+    urlPlaceholder_bitrix24_oauth: "https://portal.bitrix24.com",
+    urlPlaceholder_generic: "https://api.example.com/v1/items",
+    urlHint_1c:
+      "1C OData address. $format=json is added automatically, add $top and $filter for large catalogs.",
+    urlHint_bitrix24_webhook:
+      "Webhook root only, without the method - the method is set below or by the agent.",
+    urlHint_bitrix24_oauth:
+      "Portal address: the method is called as /rest/<method>.json?auth=<token>.",
+    urlHint_generic:
+      "Method address or the service base URL - the path can be set below.",
+    defaultPath: "Default method",
+    defaultPathPlaceholder: "crm.deal.list",
+    defaultPathHint:
+      "Optional. Used by the test and when the agent does not pass a method.",
+    defaultPath_generic: "Default path",
+    defaultPathPlaceholder_generic: "/v1/items",
+    defaultPathHint_generic:
+      "Optional. Appended to the address when the agent does not pass a path.",
+    token: "access_token",
+    tokenHint: "Stored encrypted and never returned to the browser.",
+    webhookNoToken:
+      "The key is already inside the webhook address - no separate key is needed.",
+    auth: "Authorization",
+    auth_none: "No authorization",
+    auth_bearer: "Bearer token",
+    auth_basic: "Basic (login and password)",
+    auth_header: "Key in header",
+    auth_query: "Key in URL parameter",
+    authUsername: "Login",
+    authKeyHeader: "Header name",
+    authKeyQuery: "Parameter name",
+    authPassword: "Password",
+    authSecret: "Access key",
+    secretKeep: "Key is already saved",
+    secretKeepHint: "Leave the field empty to keep the saved key.",
+    headers: "Extra headers",
+    headersHint: 'JSON object, for example {"X-Org": "main"}.',
+    schema: "Response JSON schema",
+    schemaHint:
+      "Filled in automatically after a successful test. You can edit it or add notes for the model.",
+    schemaPlaceholder: '{"root": "object", "fields": [...]}',
+    schemaGenerated:
+      "The schema was generated from the server response and inserted below.",
+    test: "Test and generate schema",
+    testing: "Testing...",
+    testOk: "Connection works",
+    testFailed: "Could not fetch data",
+    statusOk: "Available",
+    statusError: "Error",
+    statusNever: "Not tested yet",
+    enabled: "Enabled",
+    save: "Save",
+    saving: "Saving...",
+    saved: "Connection saved",
+    saveError: "Could not save the connection",
+    cancel: "Cancel",
+    remove: "Delete",
+    deleteTitle: "Delete connection?",
+    deleteMessage:
+      '"{{name}}" will be deleted. The model will no longer be able to fetch this data.',
   },
   general: {
     vector: {
@@ -458,6 +574,40 @@ const TRANSLATIONS = {
           "move-file": {
             title: "Move/Rename File",
             description: "Move or rename files and directories",
+          },
+        },
+      },
+      codeInterpreter: {
+        title: "Code Interpreter",
+        description:
+          "Enable your agent to run Python in an isolated sandbox for real calculations, data analysis and charts instead of guessing numbers.",
+        runtime:
+          "Python 3.12 with numpy, pandas, scipy, matplotlib and openpyxl. Files persist per conversation and no internet access is available.",
+        configuration: "Available Actions",
+        executionActions: "Execution",
+        fileActions: "Data & Maintenance",
+        warning:
+          "This skill executes code written by the model. Every run asks for your approval, and output is limited by a timeout and memory cap - review the code before approving.",
+        isolation:
+          "Code runs in a separate container with no network, no access to app storage and no credentials.",
+        skills: {
+          run: {
+            title: "Run Python Code",
+            description:
+              "Execute a cell, return stdout/stderr and save any files it creates",
+          },
+          upload: {
+            title: "Upload File to Sandbox",
+            description:
+              "Copy a workspace file into the sandbox or write text/CSV content inline",
+          },
+          list: {
+            title: "List Sandbox Files",
+            description: "Show files kept between runs in this conversation",
+          },
+          reset: {
+            title: "Reset Sandbox",
+            description: "Delete all files in this conversation's sandbox",
           },
         },
       },
@@ -937,7 +1087,7 @@ const TRANSLATIONS = {
       "support-contacts": {
         title: "Password Recovery Contacts",
         description:
-          'Contacts shown to users when they click "Forgot password" on the login page. Enable and fill in only the channels you want to display.',
+          "Contacts shown to users when they click \"Forgot password\" on the login page. Enable and fill in only the channels you want to display.",
         show: "Show on login page",
         save: "Save",
         "save-success": "Password recovery contacts updated.",
@@ -1911,6 +2061,88 @@ const TRANSLATIONS = {
     },
     support: "Support",
     signout: "Sign out",
+  },
+  product_tour: {
+    title: "Interstorm AI tour",
+    close: "Close the tour",
+    back: "Back",
+    next: "Next",
+    finish: "Get started",
+    step_of: "Step {{current}} of {{total}}",
+    restart: "Take the tour again",
+    restart_hint: "Replay the walkthrough of the main sections",
+    steps: {
+      welcome: {
+        title: "Welcome to Interstorm AI",
+        description:
+          "A one-minute walkthrough of where everything lives: your chats, your profile, working with documents, and how to reach an administrator.\n\nYou can replay it any time from your profile.",
+      },
+      chats: {
+        title: "Your chats",
+        description:
+          "The left menu lists every chat you have access to.\n\nYour personal chat was created just for you: only you can see it, and anything you upload there stays private.",
+      },
+      prompt: {
+        title: "Ask questions",
+        description:
+          "Type your question here and press Enter or the send button. The assistant answers using the documents and history of your chat.",
+      },
+      account: {
+        title: "Your account",
+        description:
+          "The button with your name opens your profile: picture, username and password, memories and support.\n\nLet's look inside.",
+      },
+      account_tabs: {
+        title: "Profile and memories",
+        description:
+          "Two tabs: Profile holds your account details and appearance, Memories hold what the assistant should know about you.",
+      },
+      account_preferences: {
+        title: "Theme, language and voice",
+        description:
+          "Pick the interface theme and language.\n\nBelow are voice input (recognized text can be sent automatically) and voice output (the assistant reads answers aloud).",
+      },
+      account_memories: {
+        title: "Memories",
+        description:
+          "Add the essentials about yourself: role, tasks, preferred answer style, important rules.\n\nThe assistant applies them in every chat, and other users never see these entries.",
+      },
+      personal_chat: {
+        title: "Uploading documents",
+        description:
+          "This is your own chat and the home of your documents. The platform accepts text and spreadsheet documents, presentations, images and audio files - attach a file with the + button and work with it in the chat.",
+      },
+      agent: {
+        title: "Agent mode",
+        description:
+          "The system runs in agent mode: it browses the internet on its own, looks up the data it needs and can answer with more than text - it can build a presentation, an Excel file, a Word document or an image when you ask for one.\n\nThere is nothing to switch on: just type your command in the chat you need.",
+      },
+      tools: {
+        title: "Tools",
+        description:
+          "The Tools button opens the menu of assistant commands and skills.\n\nIf you have commands you use often, add them here and then call them in one click or through / in the input field.",
+      },
+      rag: {
+        title: "Documents as permanent context (RAG)",
+        description:
+          "This documents menu opens from the icon next to the workspace settings. Drop files here or pick them from your disk and they land in the workspace documents.\n\nThe system then splits them into fragments and stores them in the vector database - that is RAG. For every question it first looks up the fragments closest in meaning and only then passes them to the model, so the assistant answers from your files, and every answer lets you open its sources and check each fact.\n\nThis is your personal workspace: by default you have one, and an administrator can add more. Documents and connections of other users are not available to you.",
+      },
+      connectors: {
+        title: "Connecting 1C and Bitrix24",
+        description:
+          "If your data lives in a business system rather than in files, connect it here: press Add, pick 1C or Bitrix24, then fill in the address and credentials.\n\nTo the assistant such a connection is an external-data tool: it fetches the records it needs from 1C or Bitrix24 and answers from them, exactly as it does with uploaded documents.\n\nThese settings belong to your personal workspace only: by default you have one, an administrator can add more, and documents and connections of other users are not available to you.",
+      },
+      support: {
+        title: "Need help?",
+        description:
+          "The icons under the chat list are the website, the help page and the support chat.\n\nThe Support item in your account menu writes to the administrator - they will help.",
+      },
+      done: {
+        title: "All set!",
+        description:
+          "You now know where your chats, profile settings, documents and support live.\n\nTo replay the tour, open your profile and press Take the tour again.",
+      },
+    },
   },
   "keyboard-shortcuts": {
     title: "Keyboard Shortcuts",

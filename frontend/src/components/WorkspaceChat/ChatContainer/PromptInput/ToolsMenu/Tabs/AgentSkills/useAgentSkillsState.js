@@ -16,6 +16,8 @@ export default function useAgentSkillsState(defaultSkills) {
   // Core skill state
   const [fileSystemAgentAvailable, setFileSystemAgentAvailable] =
     useState(false);
+  const [codeInterpreterAvailable, setCodeInterpreterAvailable] =
+    useState(false);
   const [imageGenerationAvailable, setImageGenerationAvailable] =
     useState(false);
   const [isMultiUser, setIsMultiUser] = useState(false);
@@ -45,6 +47,7 @@ export default function useAgentSkillsState(defaultSkills) {
         fsAgentAvailable,
         multiUserMode,
         imageGenAvailable,
+        codeInterpreterReachable,
       ] = await Promise.all([
         Admin.systemPreferencesByFields([
           "disabled_agent_skills",
@@ -56,6 +59,7 @@ export default function useAgentSkillsState(defaultSkills) {
         System.isFileSystemAgentAvailable(),
         System.isMultiUserMode(),
         System.isImageGenerationAvailable(),
+        System.isCodeInterpreterAvailable(),
       ]);
 
       if (prefs?.settings) {
@@ -67,6 +71,7 @@ export default function useAgentSkillsState(defaultSkills) {
       if (flowsRes?.flows) setFlows(flowsRes.flows);
       setFileSystemAgentAvailable(fsAgentAvailable);
       setImageGenerationAvailable(imageGenAvailable);
+      setCodeInterpreterAvailable(codeInterpreterReachable);
       setIsMultiUser(!!multiUserMode);
     } catch (e) {
       console.error(e);
@@ -181,6 +186,7 @@ export default function useAgentSkillsState(defaultSkills) {
   return {
     // State
     fileSystemAgentAvailable,
+    codeInterpreterAvailable,
     imageGenerationAvailable,
     isMultiUser,
     disabledDefaults,

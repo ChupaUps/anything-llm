@@ -92,6 +92,7 @@ export default function AttachItem({
     <>
       <button
         id="attach-item-btn"
+        data-tour="chat-attach"
         data-tooltip-id={
           showTooltip ? "tooltip-attach-item-btn" : "attach-item-btn"
         }

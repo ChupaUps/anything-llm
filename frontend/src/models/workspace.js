@@ -239,11 +239,27 @@ const Workspace = {
       window.removeEventListener(ABORT_STREAM_EVENT, onAbortStream);
     }
   },
-  all: async function () {
-    const workspaces = await fetch(`${API_BASE}/workspaces`, {
-      method: "GET",
-      headers: baseHeaders(),
-    })
+  /**
+   * Lists the workspaces visible to the current user.
+   * The server provisions the personal workspace of a `default` user on this
+   * call, so the localized name is passed along for accounts that do not have
+   * one yet.
+   * @param {{personalWorkspaceName?: string}} params
+   * @returns {Promise<Array>}
+   */
+  all: async function ({ personalWorkspaceName = null } = {}) {
+    const params = new URLSearchParams();
+    if (personalWorkspaceName)
+      params.set("personalWorkspaceName", personalWorkspaceName);
+    const query = params.toString();
+
+    const workspaces = await fetch(
+      `${API_BASE}/workspaces${query ? `?${query}` : ""}`,
+      {
+        method: "GET",
+        headers: baseHeaders(),
+      }
+    )
       .then((res) => res.json())
       .then((res) => res.workspaces || [])
       .catch(() => []);

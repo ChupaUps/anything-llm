@@ -147,6 +147,7 @@ export default function ToolsMenu({
       />
       <div
         ref={popoverRef}
+        data-tour="tools-menu"
         onMouseDown={(e) => {
           // Prevents prompt textarea from losing focus when clicking inside the menu.
           // Skip for portaled modals so their inputs can still receive focus.

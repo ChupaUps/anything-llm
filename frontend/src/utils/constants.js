@@ -12,6 +12,19 @@ export const PENDING_HOME_MESSAGE = "anythingllm_pending_home_message";
 export const SESSION_REASONING_EFFORT_MAP =
   "anythingllm_session_reasoning_effort_map";
 
+// Product tour (guided walkthrough of the app) glue. The tour itself lives in
+// `components/ProductTour` and is driven by window events so any component can
+// start it or steer the account modal it walks through.
+export const PRODUCT_TOUR_STORAGE_PREFIX = "anythingllm_product_tour";
+export const PRODUCT_TOUR_VERSION = 4;
+export const START_PRODUCT_TOUR_EVENT = "anythingllm:start-product-tour";
+export const OPEN_ACCOUNT_MODAL_EVENT = "anythingllm:open-account-modal";
+export const CLOSE_ACCOUNT_MODAL_EVENT = "anythingllm:close-account-modal";
+export const OPEN_WORKSPACE_UPLOAD_MODAL_EVENT =
+  "anythingllm:open-workspace-upload-modal";
+export const CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT =
+  "anythingllm:close-workspace-upload-modal";
+
 export const APPEARANCE_SETTINGS = "anythingllm_appearance_settings";
 
 export const OLLAMA_COMMON_URLS = [

@@ -197,11 +197,11 @@ export function WorkspaceLimitInput({ role, limit, setLimit }) {
   return (
     <div className="flex flex-col gap-y-1.5 w-full">
       <label className="text-theme-text-primary text-sm font-semibold">
-        Personal workspaces
+        Personal workspace limit
       </label>
       <p className="text-xs text-theme-text-secondary">
-        How many personal workspaces this user can create for their own
-        documents and links. Admins and managers are not limited.
+        Maximum number of personal workspaces this user may own. Admins and
+        managers are not limited.
       </p>
       <input
         type="number"

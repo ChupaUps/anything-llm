@@ -1,4 +1,5 @@
 import { getCreateFileSkills } from "@/pages/Admin/Agents/CreateFileSkillPanel";
+import { getCodeInterpreterSkills } from "@/pages/Admin/Agents/CodeInterpreterSkillPanel/utils";
 import { getFileSystemSubSkills } from "@/pages/Admin/Agents/FileSystemSkillPanel";
 import { getGmailSkills } from "@/pages/Admin/Agents/GMailSkillPanel/utils";
 import { getGoogleCalendarSkills } from "@/pages/Admin/Agents/GoogleCalendarSkillPanel/utils";
@@ -31,6 +32,10 @@ export const SUB_SKILL_REGISTRY = {
   "filesystem-agent": {
     preferenceKey: "disabled_filesystem_skills",
     getSubSkills: (t) => getFileSystemSubSkills(t),
+  },
+  "code-interpreter": {
+    preferenceKey: "disabled_code_interpreter_skills",
+    getSubSkills: (t) => getCodeInterpreterSkills(t),
   },
   "gmail-agent": {
     preferenceKey: "disabled_gmail_skills",

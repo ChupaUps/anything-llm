@@ -46,6 +46,24 @@ function agentSkillWhitelistEndpoints(app) {
   );
 
   app.get(
+    "/agent-skills/code-interpreter/is-available",
+    [validatedRequest],
+    async (_request, response) => {
+      try {
+        const codeInterpreter = require("../utils/agents/aibitat/plugins/code-interpreter/lib");
+        return response
+          .status(200)
+          .json({ available: await codeInterpreter.isToolAvailable() });
+      } catch (e) {
+        console.error(e);
+        return response
+          .status(500)
+          .json({ available: false, error: e.message });
+      }
+    }
+  );
+
+  app.get(
     "/agent-skills/image-generation/is-available",
     [validatedRequest],
     async (_request, response) => {

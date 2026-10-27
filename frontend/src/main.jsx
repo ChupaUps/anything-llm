@@ -41,7 +41,10 @@ const router = createBrowserRouter([
           const { default: WorkspaceSettings } = await import(
             "@/pages/WorkspaceSettings"
           );
-          return { element: <ManagerRoute Component={WorkspaceSettings} /> };
+          // Members also open the settings page: they connect 1C, Bitrix24 and
+          // custom APIs to their own workspace, while the page itself limits
+          // which tabs each role can see.
+          return { element: <PrivateRoute Component={WorkspaceSettings} /> };
         },
       },
       {

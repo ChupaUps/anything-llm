@@ -9,12 +9,14 @@ const { generateImage } = require("./generate-image.js");
 const { sqlAgent } = require("./sql-agent/index.js");
 const { filesystemAgent } = require("./filesystem/index.js");
 const { createFilesAgent } = require("./create-files/index.js");
+const { codeInterpreterAgent } = require("./code-interpreter/index.js");
 const { gmailAgent } = require("./gmail/index.js");
 const { outlookAgent } = require("./outlook/index.js");
 const { googleCalendarAgent } = require("./google-calendar/index.js");
 const { requestUserInput } = require("./request-user-input.js");
 const { createScheduledJob } = require("./create-scheduled-job/index.js");
 const { modelRouterCooldown } = require("./model-router-cooldown.js");
+const { externalData } = require("./external-data.js");
 
 module.exports = {
   webScraping,
@@ -28,12 +30,14 @@ module.exports = {
   sqlAgent,
   filesystemAgent,
   createFilesAgent,
+  codeInterpreterAgent,
   gmailAgent,
   outlookAgent,
   googleCalendarAgent,
   requestUserInput,
   createScheduledJob,
   modelRouterCooldown,
+  externalData,
 
   // Plugin name aliases so they can be pulled by slug as well.
   [webScraping.name]: webScraping,
@@ -47,10 +51,12 @@ module.exports = {
   [sqlAgent.name]: sqlAgent,
   [filesystemAgent.name]: filesystemAgent,
   [createFilesAgent.name]: createFilesAgent,
+  [codeInterpreterAgent.name]: codeInterpreterAgent,
   [gmailAgent.name]: gmailAgent,
   [outlookAgent.name]: outlookAgent,
   [googleCalendarAgent.name]: googleCalendarAgent,
   [requestUserInput.name]: requestUserInput,
   [createScheduledJob.name]: createScheduledJob,
   [modelRouterCooldown.name]: modelRouterCooldown,
+  [externalData.name]: externalData,
 };

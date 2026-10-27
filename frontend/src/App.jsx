@@ -13,6 +13,7 @@ import { ThemeProvider } from "./ThemeContext";
 import { PWAModeProvider } from "./PWAContext";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
 import ImageLightbox from "@/components/ImageLightbox";
+import ProductTour from "@/components/ProductTour";
 import { ErrorBoundary } from "react-error-boundary";
 import ErrorBoundaryFallback from "./components/ErrorBoundaryFallback";
 
@@ -35,6 +36,7 @@ export default function App() {
                     <ToastContainer />
                     <KeyboardShortcutsHelp />
                     <ImageLightbox />
+                    <ProductTour />
                   </I18nextProvider>
                 </PfpProvider>
               </LogoProvider>

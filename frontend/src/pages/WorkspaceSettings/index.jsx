@@ -9,18 +9,21 @@ import {
   ArrowUUpLeft,
   ChatText,
   Database,
+  PlugsConnected,
   Robot,
   User,
   Wrench,
 } from "@phosphor-icons/react";
 import paths from "@/utils/paths";
 import { Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import GeneralAppearance from "./GeneralAppearance";
 import ChatSettings from "./ChatSettings";
 import VectorDatabase from "./VectorDatabase";
 import Members from "./Members";
 import WorkspaceAgentConfiguration from "./AgentConfig";
+import DataConnectors from "./DataConnectors";
 import useUser from "@/hooks/useUser";
 import { useTranslation } from "react-i18next";
 import System from "@/models/system";
@@ -31,7 +34,12 @@ const TABS = {
   "vector-database": VectorDatabase,
   members: Members,
   "agent-config": WorkspaceAgentConfiguration,
+  "data-connectors": DataConnectors,
 };
+
+// Members (`default` role) own their personal workspace and only manage its
+// external data connections - the remaining tabs stay for admins and managers.
+const MEMBER_TABS = ["data-connectors"];
 
 export default function WorkspaceSettings() {
   const { loading, requiresAuth, mode } = usePasswordModal();
@@ -76,7 +84,16 @@ function ShowWorkspaceChat() {
 
   if (loading) return <FullScreenLoader />;
 
+  const isMember = user?.role === "default";
+  const fallbackPath = isMember
+    ? paths.workspace.settings.dataConnectors(slug)
+    : paths.workspace.settings.generalAppearance(slug);
   const TabContent = TABS[tab];
+  // A member can never land on a tab that is reserved for the workspace owner
+  // or an admin, so they are sent straight to the API connections page.
+  if (!TabContent || (isMember && !MEMBER_TABS.includes(tab)))
+    return <Navigate to={fallbackPath} replace />;
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-zinc-950 light:bg-slate-50 flex">
       {!isMobile && <Sidebar />}
@@ -84,7 +101,10 @@ function ShowWorkspaceChat() {
         style={{ height: isMobile ? "100%" : "calc(100% - 32px)" }}
         className="transition-all duration-500 relative md:ml-[2px] md:mr-[16px] md:my-[16px] md:rounded-[16px] bg-zinc-900 light:bg-white w-full h-full overflow-y-scroll"
       >
-        <div className="flex gap-x-10 pt-6 pb-4 ml-16 mr-8 border-b-2 border-white light:border-theme-chat-input-border border-opacity-10">
+        <div
+          data-tour="workspace-settings-tabs"
+          className="flex gap-x-10 pt-6 pb-4 ml-16 mr-8 border-b-2 border-white light:border-theme-chat-input-border border-opacity-10"
+        >
           <Link
             to={paths.workspace.chat(slug)}
             className="absolute top-2 left-2 md:top-4 md:left-4 transition-all duration-300 p-2 rounded-full text-white bg-theme-sidebar-footer-icon hover:bg-theme-sidebar-footer-icon-hover z-10"
@@ -95,16 +115,19 @@ function ShowWorkspaceChat() {
             title={t("workspaces—settings.general")}
             icon={<Wrench className="h-6 w-6" />}
             to={paths.workspace.settings.generalAppearance(slug)}
+            visible={!isMember}
           />
           <TabItem
             title={t("workspaces—settings.chat")}
             icon={<ChatText className="h-6 w-6" />}
             to={paths.workspace.settings.chatSettings(slug)}
+            visible={!isMember}
           />
           <TabItem
             title={t("workspaces—settings.vector")}
             icon={<Database className="h-6 w-6" />}
             to={paths.workspace.settings.vectorDatabase(slug)}
+            visible={!isMember}
           />
           <TabItem
             title={t("workspaces—settings.members")}
@@ -116,6 +139,12 @@ function ShowWorkspaceChat() {
             title={t("workspaces—settings.agent")}
             icon={<Robot className="h-6 w-6" />}
             to={paths.workspace.settings.agentConfig(slug)}
+            visible={!isMember}
+          />
+          <TabItem
+            title={t("workspaces—settings.dataConnectors")}
+            icon={<PlugsConnected className="h-6 w-6" />}
+            to={paths.workspace.settings.dataConnectors(slug)}
           />
         </div>
         <div className="px-16 py-6">

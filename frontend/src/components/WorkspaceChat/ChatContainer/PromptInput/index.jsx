@@ -326,6 +326,7 @@ export default function PromptInput({
   return (
     <div
       id="prompt-input-wrapper"
+      data-tour="prompt-input"
       className={
         centered
           ? "w-full relative flex justify-center items-center"
@@ -479,6 +480,7 @@ function ToolsButton({
     <button
       id="tools-btn"
       type="button"
+      data-tour="tools-button"
       onClick={() => {
         autoOpenedToolsRef.current = false;
         setShowTools(!showTools);

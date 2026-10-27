@@ -69,11 +69,14 @@ export default function AdminAgents() {
     useState(false);
   const [createFilesAgentAvailable, setCreateFilesAgentAvailable] =
     useState(false);
+  const [codeInterpreterAvailable, setCodeInterpreterAvailable] =
+    useState(false);
 
   const defaultSkills = getDefaultSkills(t);
   const allConfigurableSkills = getConfigurableSkills(t, {
     fileSystemAgentAvailable,
     createFilesAgentAvailable,
+    codeInterpreterAvailable,
   });
   const allAppIntegrationSkills = getAppIntegrationSkills(t);
 
@@ -118,6 +121,7 @@ export default function AdminAgents() {
         flowsRes,
         fsAgentAvailable,
         createFilesAvailable,
+        codeInterpreterReachable,
       ] = await Promise.all([
         System.keys(),
         Admin.systemPreferencesByFields([
@@ -129,6 +133,7 @@ export default function AdminAgents() {
         AgentFlows.listFlows(),
         System.isFileSystemAgentAvailable(),
         System.isCreateFilesAgentAvailable(),
+        System.isCodeInterpreterAvailable(),
       ]);
 
       const { flows = [] } = flowsRes;
@@ -142,6 +147,7 @@ export default function AdminAgents() {
       setAgentFlows(flows);
       setFileSystemAgentAvailable(fsAgentAvailable);
       setCreateFilesAgentAvailable(createFilesAvailable);
+      setCodeInterpreterAvailable(codeInterpreterReachable);
       setLoading(false);
     }
     fetchSettings();

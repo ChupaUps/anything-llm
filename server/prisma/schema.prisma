@@ -154,8 +154,38 @@ model workspaces {
   prompt_history               prompt_history[]
   workspace_parsed_files       workspace_parsed_files[]
   memories                     memories[]
+  data_connectors              workspace_data_connectors[]
 
   @@index([owner_id])
+}
+
+// External systems (1C, Bitrix24, other REST APIs) a workspace can pull live
+// data from. Secrets are stored encrypted at rest.
+model workspace_data_connectors {
+  id              Int        @id @default(autoincrement())
+  workspace_id    Int
+  name            String
+  description     String?
+  provider        String     @default("generic")
+  variant         String?
+  url             String
+  default_path    String?
+  auth_type       String     @default("none")
+  auth_username   String?
+  auth_secret     String?
+  auth_key        String?
+  headers         String?
+  response_schema String?
+  enabled         Boolean    @default(true)
+  last_status     String?
+  last_error      String?
+  last_checked_at DateTime?
+  createdAt       DateTime   @default(now())
+  lastUpdatedAt   DateTime   @default(now())
+  workspace       workspaces @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  @@unique([workspace_id, name])
+  @@index([workspace_id])
 }
 
 model workspace_threads {

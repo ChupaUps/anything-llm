@@ -50,6 +50,31 @@ const Admin = {
         return { success: false, error: e.message };
       });
   },
+  /** Personal workspaces (chats) owned by the user. */
+  userWorkspaces: async (userId) => {
+    return await fetch(`${API_BASE}/admin/user/${userId}/workspaces`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => res?.workspaces || [])
+      .catch((e) => {
+        console.error(e);
+        return [];
+      });
+  },
+  /** Adds one more personal workspace whose slug comes from the login. */
+  createUserWorkspace: async (userId) => {
+    return await fetch(`${API_BASE}/admin/user/${userId}/workspaces`, {
+      method: "POST",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { workspace: null, error: e.message };
+      });
+  },
 
   // Usage dashboard
   usageDashboard: async (days = 90) => {

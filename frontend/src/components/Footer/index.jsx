@@ -48,7 +48,7 @@ export default function Footer() {
   if (!Array.isArray(footerData) || footerData.length === 0) {
     return (
       <div className="flex justify-center mb-2">
-        <div className="flex space-x-4">
+        <div className="flex space-x-4" data-tour="support-icons">
           <div className="flex w-fit">
             <Link
               to={paths.site()}
@@ -111,7 +111,7 @@ export default function Footer() {
 
   return (
     <div className="flex justify-center mb-2">
-      <div className="flex space-x-4">
+      <div className="flex space-x-4" data-tour="support-icons">
         {footerData.map((item, index) => (
           <a
             key={index}
