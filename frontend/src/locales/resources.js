@@ -24,7 +24,5 @@ export const resources = {
   en: {
     common: English,
   },
-  hu: {
-    common: Hungarian,
-  },
+
 };
