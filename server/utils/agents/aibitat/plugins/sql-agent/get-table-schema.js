@@ -3,7 +3,9 @@ module.exports.SqlAgentGetTableSchema = {
   plugin: function () {
     const {
       listSQLConnections,
+      workspaceIdFrom,
       getDBClient,
+      NO_CONNECTIONS_MESSAGE,
     } = require("./SQLConnectors/index.js");
 
     function formatQueryForDisplay(query, params = []) {
@@ -64,7 +66,10 @@ module.exports.SqlAgentGetTableSchema = {
           handler: async function ({ database_id = "", table_name = "" }) {
             this.super.handlerProps.log(`Using the sql-get-table-schema tool.`);
             try {
-              const databaseConfig = (await listSQLConnections()).find(
+              const connections = await listSQLConnections(
+                workspaceIdFrom(this.super.handlerProps)
+              );
+              const databaseConfig = connections.find(
                 (db) => db.database_id === database_id
               );
               if (!databaseConfig) {
@@ -72,6 +77,7 @@ module.exports.SqlAgentGetTableSchema = {
                   `sql-get-table-schema to find config!`,
                   database_id
                 );
+                if (connections.length === 0) return NO_CONNECTIONS_MESSAGE;
                 return `No database connection for ${database_id} was found!`;
               }
 

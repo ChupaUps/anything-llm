@@ -64,6 +64,9 @@ const { memoryEndpoints } = require("./endpoints/memory");
 const {
   workspaceDataConnectorEndpoints,
 } = require("./endpoints/workspaceDataConnectors");
+const {
+  workspaceSQLConnectorEndpoints,
+} = require("./endpoints/workspaceSQLConnectors");
 const { httpLogger } = require("./middleware/httpLogger");
 const app = express();
 const apiRouter = express.Router();
@@ -141,6 +144,7 @@ outlookAgentEndpoints(apiRouter);
 googleAgentSkillEndpoints(apiRouter);
 memoryEndpoints(apiRouter);
 workspaceDataConnectorEndpoints(apiRouter);
+workspaceSQLConnectorEndpoints(apiRouter);
 // Externally facing embedder endpoints
 embeddedEndpoints(apiRouter);
 

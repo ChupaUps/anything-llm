@@ -9,6 +9,7 @@ import {
   ArrowUUpLeft,
   ChatText,
   Database,
+  HardDrives,
   PlugsConnected,
   Robot,
   User,
@@ -24,6 +25,7 @@ import VectorDatabase from "./VectorDatabase";
 import Members from "./Members";
 import WorkspaceAgentConfiguration from "./AgentConfig";
 import DataConnectors from "./DataConnectors";
+import SQLConnectors from "./SQLConnectors";
 import useUser from "@/hooks/useUser";
 import { useTranslation } from "react-i18next";
 import System from "@/models/system";
@@ -35,11 +37,13 @@ const TABS = {
   members: Members,
   "agent-config": WorkspaceAgentConfiguration,
   "data-connectors": DataConnectors,
+  "sql-connectors": SQLConnectors,
 };
 
 // Members (`default` role) own their personal workspace and only manage its
-// external data connections - the remaining tabs stay for admins and managers.
-const MEMBER_TABS = ["data-connectors"];
+// external data connections and databases - the remaining tabs stay for admins
+// and managers.
+const MEMBER_TABS = ["data-connectors", "sql-connectors"];
 
 export default function WorkspaceSettings() {
   const { loading, requiresAuth, mode } = usePasswordModal();
@@ -145,6 +149,11 @@ function ShowWorkspaceChat() {
             title={t("workspaces—settings.dataConnectors")}
             icon={<PlugsConnected className="h-6 w-6" />}
             to={paths.workspace.settings.dataConnectors(slug)}
+          />
+          <TabItem
+            title={t("workspaces—settings.sqlConnectors")}
+            icon={<HardDrives className="h-6 w-6" />}
+            to={paths.workspace.settings.sqlConnectors(slug)}
           />
         </div>
         <div className="px-16 py-6">

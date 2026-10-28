@@ -1,7 +1,11 @@
 module.exports.SqlAgentListDatabase = {
   name: "sql-list-databases",
   plugin: function () {
-    const { listSQLConnections } = require("./SQLConnectors");
+    const {
+      listSQLConnections,
+      workspaceIdFrom,
+      NO_CONNECTIONS_MESSAGE,
+    } = require("./SQLConnectors");
     return {
       name: "sql-list-databases",
       setup(aibitat) {
@@ -9,7 +13,7 @@ module.exports.SqlAgentListDatabase = {
           super: aibitat,
           name: this.name,
           description:
-            "List all available databases via `list_databases` you currently have access to. Returns a unique string identifier `database_id` that can be used for future calls.",
+            "List all SQL databases connected to this workspace via `list_databases`. Returns a unique string identifier `database_id` that can be used for future calls.",
           examples: [
             {
               prompt: "What databases can you access?",
@@ -36,10 +40,13 @@ module.exports.SqlAgentListDatabase = {
               `${this.caller}: Checking what are the available databases.`
             );
 
-            const connections = (await listSQLConnections()).map((conn) => {
+            const connections = (
+              await listSQLConnections(workspaceIdFrom(this.super.handlerProps))
+            ).map((conn) => {
               const { connectionString: _connectionString, ...rest } = conn;
               return rest;
             });
+            if (connections.length === 0) return NO_CONNECTIONS_MESSAGE;
             return JSON.stringify(connections);
           },
         });

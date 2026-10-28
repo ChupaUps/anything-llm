@@ -1,0 +1,6 @@
+image_created=2026-10-28T09:03:08.725017749Z
+total 28
+drwxr-xr-x 2 anythingllm anythingllm  4096 Oct 28 09:24 .
+drwxr-xr-x 1 anythingllm anythingllm  4096 Oct 28 09:24 ..
+-rw-r--r-- 1 anythingllm anythingllm 13190 Oct 28 09:22 persistedEnv.js
+---MOUNTS---

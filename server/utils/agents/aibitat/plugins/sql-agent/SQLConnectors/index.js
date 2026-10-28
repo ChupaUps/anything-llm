@@ -1,6 +1,3 @@
-const { SystemSettings } = require("../../../../../../models/systemSettings");
-const { safeJsonParse } = require("../../../../../http");
-
 /**
  * @typedef {('postgresql'|'mysql'|'sql-server')} SQLEngine
  */
@@ -44,14 +41,36 @@ function getDBClient(identifier = "", connectionConfig = {}) {
 }
 
 /**
- * Lists all of the known database connection that can be used by the agent.
+ * Lists the database connections available to the agent in a workspace.
+ * Connections are workspace-scoped, so a chat only sees the databases its
+ * owner connected - never the ones of another chat.
+ * @param {number|null} workspaceId
  * @returns {Promise<[SQLConnection]>}
  */
-async function listSQLConnections() {
-  return safeJsonParse(
-    (await SystemSettings.get({ label: "agent_sql_connections" }))?.value,
-    []
-  );
+async function listSQLConnections(workspaceId = null) {
+  if (!workspaceId) return [];
+  const {
+    WorkspaceSQLConnector,
+  } = require("../../../../../../models/workspaceSQLConnector");
+  return WorkspaceSQLConnector.forAgent(workspaceId);
+}
+
+/**
+ * Answer for the tools when the workspace owner has not connected a database
+ * yet - the model should ask the user to add one instead of guessing.
+ */
+const NO_CONNECTIONS_MESSAGE =
+  "No SQL databases are connected to this workspace yet. The user can add one in the workspace settings in the 'SQL databases' tab.";
+
+/**
+ * Workspace id of the running agent invocation, used to scope the tools to the
+ * chat the user is talking in.
+ * @param {object|null} handlerProps AIbitat handler props
+ * @returns {number|null}
+ */
+function workspaceIdFrom(handlerProps = null) {
+  const invocation = handlerProps?.invocation ?? {};
+  return invocation?.workspace?.id ?? invocation?.workspace_id ?? null;
 }
 
 /**
@@ -76,5 +95,7 @@ async function validateConnection(identifier = "", connectionConfig = {}) {
 module.exports = {
   getDBClient,
   listSQLConnections,
+  workspaceIdFrom,
   validateConnection,
+  NO_CONNECTIONS_MESSAGE,
 };

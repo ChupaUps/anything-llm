@@ -151,8 +151,7 @@ const TRANSLATIONS = {
       cta: "contact the administrator",
       description:
         "To reset your password, contact your platform administrator using any of the contacts below.",
-      "not-configured":
-        "The administrator has not added contact details yet.",
+      "not-configured": "The administrator has not added contact details yet.",
       close: "Back to login",
       channels: {
         email: "Email",
@@ -211,6 +210,7 @@ const TRANSLATIONS = {
     members: "Members",
     agent: "Agent Configuration",
     dataConnectors: "Data & API",
+    sqlConnectors: "SQL databases",
   },
   dataConnector: {
     title: "Data & API",
@@ -312,6 +312,78 @@ const TRANSLATIONS = {
     deleteTitle: "Delete connection?",
     deleteMessage:
       '"{{name}}" will be deleted. The model will no longer be able to fetch this data.',
+  },
+  sqlConnector: {
+    title: "SQL databases",
+    description:
+      "Connect PostgreSQL, MySQL or SQL Server databases the agent can query in this chat. Connection strings are encrypted at rest.",
+    multiHint:
+      "Several databases can be connected: production and staging, sales and inventory - the agent picks the right one by name.",
+    agentHint:
+      "SQL tools are available only in this chat and only in the Agent (automatic) mode. Other chats never see this database.",
+    add: "Add database",
+    empty:
+      "No databases yet. Add the first one - for example a sales data mart or a product catalog.",
+    addTitle: "New database",
+    editTitle: "Edit database",
+    formSubtitle:
+      "Provide the connection details. The connection is verified with a real query before saving.",
+    readOnlyWarning:
+      "Warning: the agent is instructed to run non-modifying queries only, but this does not prevent a mistake. Connect with a READ_ONLY user.",
+    engine: "Database engine",
+    engine_postgresql: "PostgreSQL",
+    engine_mysql: "MySQL",
+    "engine_sql-server": "SQL Server",
+    name: "Name",
+    namePlaceholder: "For example: Sales · Prod",
+    nameHint:
+      "The agent finds the database by this name and the database_id identifier is derived from it.",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "What this database contains",
+    descriptionHint:
+      "Helps the model understand which database to query for data.",
+    connectionDetails: "Connection details",
+    credentialsHint:
+      "The connection string is encrypted on the server and never returned to the browser.",
+    credentialsKeepHint:
+      "Fill the fields again to replace the connection details. Leave them empty to keep the current ones.",
+    credentialsRequired: "Fill in the connection details",
+    credentialsPartial:
+      "Fill in every connection field or leave all of them empty to keep the current details.",
+    username: "Database user",
+    usernamePlaceholder: "readonly",
+    password: "Password",
+    passwordPlaceholder: "database user password",
+    host: "Server",
+    hostPlaceholder: "Database host or IP address",
+    port: "Port",
+    database: "Database",
+    databasePlaceholder: "Name of the database the agent works with",
+    schema: "Schema (PostgreSQL)",
+    schemaHint: "Optional. The public schema is used by default.",
+    encrypt: "Encrypt connection (SQL Server)",
+    ssl: "Use SSL (PostgreSQL)",
+    targetHidden: "Connection details are saved",
+    check: "Test connection",
+    checking: "Testing...",
+    test: "Test",
+    testOk: "Connection works",
+    testFailed: "Could not connect",
+    statusOk: "Available",
+    statusError: "Error",
+    statusNever: "Not tested yet",
+    enabled: "Enabled",
+    save: "Save",
+    saving: "Saving...",
+    saved: "Database saved",
+    saveError: "Could not save the database",
+    engineNeedsCredentials:
+      "To change the engine, enter the connection details again.",
+    cancel: "Cancel",
+    remove: "Delete",
+    deleteTitle: "Delete database?",
+    deleteMessage:
+      '"{{name}}" will be deleted. The agent will no longer be able to query this database in this chat.',
   },
   general: {
     vector: {
@@ -1009,14 +1081,14 @@ const TRANSLATIONS = {
     },
     branding: {
       title: "Branding & Whitelabeling",
-      description: "White-label your Interstorm-AI instance with custom branding.",
+      description:
+        "White-label your Interstorm-AI instance with custom branding.",
       tabs: {
         identity: "Identity",
         colors: "Colors",
         sidebar: "Sidebar",
         browser: "Browser",
       },
-
     },
     chat: {
       title: "Chat",
@@ -1087,7 +1159,7 @@ const TRANSLATIONS = {
       "support-contacts": {
         title: "Password Recovery Contacts",
         description:
-          "Contacts shown to users when they click \"Forgot password\" on the login page. Enable and fill in only the channels you want to display.",
+          'Contacts shown to users when they click "Forgot password" on the login page. Enable and fill in only the channels you want to display.',
         show: "Show on login page",
         save: "Save",
         "save-success": "Password recovery contacts updated.",

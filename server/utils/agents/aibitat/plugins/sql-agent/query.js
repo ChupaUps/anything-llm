@@ -4,6 +4,8 @@ module.exports.SqlAgentQuery = {
     const {
       getDBClient,
       listSQLConnections,
+      workspaceIdFrom,
+      NO_CONNECTIONS_MESSAGE,
     } = require("./SQLConnectors/index.js");
 
     return {
@@ -61,7 +63,10 @@ module.exports.SqlAgentQuery = {
           handler: async function ({ database_id = "", sql_query = "" }) {
             this.super.handlerProps.log(`Using the sql-query tool.`);
             try {
-              const databaseConfig = (await listSQLConnections()).find(
+              const connections = await listSQLConnections(
+                workspaceIdFrom(this.super.handlerProps)
+              );
+              const databaseConfig = connections.find(
                 (db) => db.database_id === database_id
               );
               if (!databaseConfig) {
@@ -69,6 +74,7 @@ module.exports.SqlAgentQuery = {
                   `sql-query failed to find config!`,
                   database_id
                 );
+                if (connections.length === 0) return NO_CONNECTIONS_MESSAGE;
                 return `No database connection for ${database_id} was found!`;
               }
 

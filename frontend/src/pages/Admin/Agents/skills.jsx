@@ -1,5 +1,4 @@
 import AgentWebSearchSelection from "./WebSearchSelection";
-import AgentSQLConnectorSelection from "./SQLConnectorSelection";
 import GenericSkillPanel from "./GenericSkillPanel";
 import DefaultSkillPanel from "./DefaultSkillPanel";
 import FileSystemSkillPanel from "./FileSystemSkillPanel";
@@ -132,12 +131,6 @@ export const getConfigurableSkills = (
       image: GenerateImageImage,
     },
   }),
-  "sql-agent": {
-    title: t("agent.skill.sql.title"),
-    description: t("agent.skill.sql.description"),
-    component: AgentSQLConnectorSelection,
-    skill: "sql-agent",
-  },
   "create-scheduled-job": {
     title: t("agent.skill.scheduledJob.title"),
     description: t("agent.skill.scheduledJob.description"),

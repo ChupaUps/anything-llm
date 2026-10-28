@@ -17,6 +17,11 @@ const DEFAULT_SKILLS = [
 // Skills that must never be injected when the instance is running in multi-user mode.
 const SINGLE_USER_ONLY_SKILLS = new Set(["create-scheduled-job"]);
 
+// Skills that are configured per workspace and can never be enabled instance
+// wide. The sql-agent is one of them: it only reads the databases its workspace
+// owner connected, so it is attached by `sqlSkillIfAvailable` below.
+const WORKSPACE_SCOPED_SKILLS = new Set(["sql-agent"]);
+
 /**
  * Configuration for agent skills that require availability checks and disabled sub-skill lists.
  * Each entry maps a skill name to its availability checker and disabled skills list key.
@@ -100,6 +105,7 @@ const WORKSPACE_AGENT = {
         ...(await agentSkillsFromSystemSettings()),
         ...clarifyingQuestionsSkills,
         ...(await externalDataSkillIfAvailable(workspace)),
+        ...(await sqlSkillIfAvailable(workspace)),
         ...ImportedPlugin.activeImportedPlugins(),
         ...AgentFlows.activeFlowPlugins(),
         ...(await new MCPCompatibilityLayer().activeMCPServers()),
@@ -122,6 +128,25 @@ async function externalDataSkillIfAvailable(workspace = null) {
   } = require("../../models/workspaceDataConnector");
   if (!(await WorkspaceDataConnector.hasEnabled(workspace.id))) return [];
   return [AgentPlugins.externalData.name];
+}
+
+/**
+ * The sql-agent is a workspace-scoped skill: it is attached only when the
+ * workspace owner connected at least one database in the workspace settings,
+ * so a chat without databases gets no SQL tools at all.
+ * @param {import("@prisma/client").workspaces | null} workspace
+ * @returns {Promise<string[]>}
+ */
+async function sqlSkillIfAvailable(workspace = null) {
+  if (!workspace?.id) return [];
+  const {
+    WorkspaceSQLConnector,
+  } = require("../../models/workspaceSQLConnector");
+  if (!(await WorkspaceSQLConnector.hasEnabled(workspace.id))) return [];
+
+  const parent = AgentPlugins.sqlAgent;
+  if (!Array.isArray(parent?.plugin)) return [];
+  return parent.plugin.map((sub) => `${parent.name}#${sub.name}`);
 }
 
 /**
@@ -196,6 +221,8 @@ async function agentSkillsFromSystemSettings() {
   for (const skillName of _setting) {
     if (!AgentPlugins.hasOwnProperty(skillName)) continue;
     if (isMultiUser && SINGLE_USER_ONLY_SKILLS.has(skillName)) continue;
+    // Workspace-scoped skills are never loaded from the system settings.
+    if (WORKSPACE_SCOPED_SKILLS.has(skillName)) continue;
 
     // This is a plugin module with many sub-children plugins who
     // need to be named via `${parent}#${child}` naming convention
@@ -290,5 +317,6 @@ module.exports = {
   WORKSPACE_AGENT,
   agentSkillsFromSystemSettings,
   externalDataSkillIfAvailable,
+  sqlSkillIfAvailable,
   resolveAgentSkill,
 };

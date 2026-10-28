@@ -106,6 +106,9 @@ export default {
       dataConnectors: (slug) => {
         return `/workspace/${slug}/settings/data-connectors`;
       },
+      sqlConnectors: (slug) => {
+        return `/workspace/${slug}/settings/sql-connectors`;
+      },
     },
     thread: (wsSlug, threadSlug) => {
       return `/workspace/${wsSlug}/t/${threadSlug}`;

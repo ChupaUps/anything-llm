@@ -256,9 +256,6 @@ const ScheduledJob = {
     const { AgentFlows } = require("../utils/agentFlows");
     const MCPCompatibilityLayer = require("../utils/MCP");
     const {
-      listSQLConnections,
-    } = require("../utils/agents/aibitat/plugins/sql-agent/SQLConnectors");
-    const {
       GmailBridge,
     } = require("../utils/agents/aibitat/plugins/gmail/lib");
     const {
@@ -270,10 +267,8 @@ const ScheduledJob = {
 
     const categories = [];
 
-    // Check which skills need setup
-    const sqlConnections = await listSQLConnections();
-    const sqlNeedsSetup = sqlConnections.length === 0;
-
+    // Check which skills need setup. SQL is not listed: its connections are
+    // workspace-scoped while a scheduled job runs without a workspace.
     const gmailConfig = await GmailBridge.getConfig();
     const gmailNeedsSetup = !gmailConfig.deploymentId || !gmailConfig.apiKey;
 
@@ -316,12 +311,6 @@ const ScheduledJob = {
         id: "create-chart",
         name: "Create Charts",
         description: "Generate data visualization charts",
-      },
-      {
-        id: "sql-agent",
-        name: "SQL Agent",
-        description: "Query connected SQL databases",
-        requiresSetup: sqlNeedsSetup,
       },
     ];
 
