@@ -561,19 +561,6 @@ class Provider {
           apiKey: process.env.LEMONADE_LLM_API_KEY || null,
           ...config,
         });
-      case "embedded_lemonade": {
-        const {
-          EmbeddedLemonadeLLM,
-        } = require("../../../AiProviders/embeddedLemonade");
-        return new ChatOpenAI({
-          configuration: {
-            baseURL: EmbeddedLemonadeLLM.openaiBasePath(),
-            fetch: EmbeddedLemonadeLLM.bootingFetch(config?.model),
-          },
-          apiKey: "not-used",
-          ...config,
-        });
-      }
       case "omlx":
         return new ChatOpenAI({
           configuration: {
@@ -795,7 +782,7 @@ class Provider {
       totals.totalCost = (totals.totalCost ?? 0) + cost.totalCost;
     }
 
-    this.#recordUsageEvent({
+    this.recordUsageEvent({
       promptTokens,
       completionTokens,
       totalTokens,
@@ -806,16 +793,15 @@ class Provider {
   /**
    * Persists this completion's usage for the admin dashboard. Usage is logged
    * per call (not from the run totals) so a run with several completions is
-   * never counted twice. Failures are swallowed - accounting must never break
-   * agent execution.
+   * never counted twice. Failures never break agent execution.
+   *
+   * ## Developer Note
+   * Must stay public: `InheritMultiple` copies methods onto a plain base class,
+   * so a private member declared here cannot be reached from the copy and
+   * throws instead of logging.
    * @param {{promptTokens: number, completionTokens: number, totalTokens: number, totalCost: number|null}} usage
    */
-  #recordUsageEvent({
-    promptTokens,
-    completionTokens,
-    totalTokens,
-    totalCost,
-  }) {
+  recordUsageEvent({ promptTokens, completionTokens, totalTokens, totalCost }) {
     if (!totalTokens) return;
     try {
       // Required lazily: the models layer pulls in helpers that reach back here.
@@ -832,7 +818,11 @@ class Provider {
         totalTokens,
         totalCost,
       });
-    } catch {}
+    } catch (error) {
+      console.error(
+        `\x1b[31m[UsageEvents]\x1b[0m Failed to record agent usage: ${error.message}`
+      );
+    }
   }
 
   /**
