@@ -18,6 +18,12 @@ const DocumentVectors = {
         );
       });
       await prisma.$transaction(inserts);
+      // These vectors belong to the embedder that is active right now. Recording
+      // it lets a later boot notice when a replaced ENV file or a new default
+      // model points the app at an embedder the index was not built with.
+      require("../utils/settings/persistedEnv")
+        .rememberVectorSignature()
+        .catch(() => {});
       return { documentsInserted: inserts.length };
     } catch (error) {
       console.error("Bulk insert failed", error);

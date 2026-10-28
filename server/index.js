@@ -6,6 +6,16 @@ process.env.NODE_ENV === "development"
 // log timestamps, Intl formatting and date buckets all agree.
 require("./utils/time/zone").applyStoredSystemTimeZone();
 
+// Restores the settings saved from the settings UI. They are mirrored into
+// PostgreSQL, so rebuilding the image - which starts the container from the
+// packaged ENV file - keeps the LLM credentials and the embedding selection.
+const { hydrateEnvFromDatabase } = require("./utils/settings/persistedEnv");
+const settingsHydrated = hydrateEnvFromDatabase().catch((error) => {
+  console.error(
+    `\x1b[33m[DB Settings]\x1b[0m Could not restore saved settings: ${error.message}`
+  );
+});
+
 require("./utils/logger")();
 require("./utils/boot/patchSdkTimeouts")();
 require("./utils/helpers/modelPricing"); // boots the model pricing cache refresh
@@ -97,7 +107,7 @@ app.use((err, request, response, next) => {
 });
 
 if (!!process.env.ENABLE_HTTPS) {
-  bootSSL(app, process.env.SERVER_PORT || 3001);
+  settingsHydrated.then(() => bootSSL(app, process.env.SERVER_PORT || 3001));
 } else {
   require("@mintplex-labs/express-ws").default(app); // load WebSockets in non-SSL mode.
 }
@@ -202,5 +212,7 @@ app.all("*", function (_, response) {
 });
 
 // In non-https mode we need to boot at the end since the server has not yet
-// started and is `.listen`ing.
-if (!process.env.ENABLE_HTTPS) bootHTTP(app, process.env.SERVER_PORT || 3001);
+// started and is `.listen`ing. Booting waits for the stored settings so the
+// first request never runs against a replaced ENV file.
+if (!process.env.ENABLE_HTTPS)
+  settingsHydrated.then(() => bootHTTP(app, process.env.SERVER_PORT || 3001));

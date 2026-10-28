@@ -1,5 +1,6 @@
 const { Telemetry } = require("../../models/telemetry");
 const { resetAllVectorStores } = require("../vectorStore/resetAllVectorStores");
+const { persistEnvSettings } = require("../settings/persistedEnv");
 
 const KEY_MAPPING = {
   LLMProvider: {
@@ -1573,6 +1574,9 @@ async function updateENV(newENVs = {}, force = false, userId = null) {
     await runAfterAllFunc(newValues, userId);
 
   await logChangesToEventLog(newValues, userId);
+  // The ENV dump lives inside the container unless it is bind mounted, so the
+  // same values are kept in the database and restored on the next boot.
+  await persistEnvSettings(newValues);
   if (process.env.NODE_ENV === "production") dumpENV();
   return { newValues, error: error?.length > 0 ? error : false };
 }
@@ -1750,6 +1754,7 @@ function dumpENV() {
 }
 
 module.exports = {
+  KEY_MAPPING,
   dumpENV,
   updateENV,
 };

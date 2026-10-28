@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const { dumpENV } = require("../helpers/updateENV");
+const { persistEnvValues } = require("../settings/persistedEnv");
 
 // Class that is used to arbitrarily encrypt/decrypt string data via a persistent passphrase/salt that
 // is either user defined or is created and saved to the ENV on creation.
@@ -40,6 +41,13 @@ class EncryptionManager {
       process.env[this.#keyENV] = crypto.randomBytes(32).toString("hex");
       process.env[this.#saltENV] = crypto.randomBytes(32).toString("hex");
       dumpENV();
+      // A rebuilt container starts from the packaged ENV file; keeping the pair
+      // in the database prevents a new pair from making already encrypted
+      // connector and agent secrets unreadable.
+      persistEnvValues({
+        [this.#keyENV]: process.env[this.#keyENV],
+        [this.#saltENV]: process.env[this.#saltENV],
+      }).catch(() => {});
     } else
       this.log("Loaded existing key & salt for encrypting arbitrary data.");
 
