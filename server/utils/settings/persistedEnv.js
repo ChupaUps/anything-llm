@@ -268,11 +268,79 @@ async function rememberVectorSignature() {
 }
 
 /**
+ * Values are written back in the single-quoted form dumpENV uses, and the same
+ * characters are stripped so a restored value cannot inject another line.
+ * @param {string} value
+ * @returns {string}
+ */
+function sanitizeEnvValue(value = "") {
+  const text = String(value);
+  const offending =
+    /[\n\r\t\v\f\u0085\u00a0\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000"'`#]/;
+  const index = text.search(offending);
+  return index === -1 ? text : text.slice(0, index);
+}
+
+function envFilePath() {
+  return require("path").join(__dirname, "../../.env");
+}
+
+/**
+ * Merges restored values into the ENV file in place.
+ *
+ * dumpENV rewrites the whole file from process.env, which would drop comments
+ * and keys only docker compose reads (UID, GID), so the restored values are
+ * merged into the existing lines instead. In the docker deployment the file is
+ * bind mounted, so this repairs the operator's own .env as well.
+ * @param {Record<string, string>} values
+ * @param {string} envPath
+ * @returns {number} number of keys written
+ */
+function syncEnvFile(values = {}, envPath = envFilePath()) {
+  const fs = require("fs");
+  const pending = new Map(
+    Object.entries(values).filter(
+      ([envKey, value]) => !!envKey && value != null
+    )
+  );
+  if (!pending.size) return 0;
+
+  const existing = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, { encoding: "utf8" })
+    : "";
+  let written = 0;
+  const lines = (existing ? existing.split("\n") : []).map((line) => {
+    const envKey = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/)?.[1];
+    if (!envKey || !pending.has(envKey)) return line;
+    written += 1;
+    const value = pending.get(envKey);
+    pending.delete(envKey);
+    return `${envKey}='${sanitizeEnvValue(value)}'`;
+  });
+
+  if (pending.size) {
+    if (lines.length && lines[lines.length - 1] !== "") lines.push("");
+    lines.push("# Restored from the database by [DB Settings]");
+    for (const [envKey, value] of pending) {
+      lines.push(`${envKey}='${sanitizeEnvValue(value)}'`);
+      written += 1;
+    }
+  }
+
+  fs.writeFileSync(envPath, `${lines.join("\n").trimEnd()}\n`, {
+    encoding: "utf8",
+    flag: "w",
+  });
+  return written;
+}
+
+/**
  * Restores saved settings from the database into process.env and seeds the
  * database with the values the ENV file already provides.
+ * @param {{envFile?: string|null}} opts
  * @returns {Promise<{restored: string[], pinned: string[], synced: string[]}>}
  */
-async function hydrateEnvFromDatabase() {
+async function hydrateEnvFromDatabase({ envFile = null } = {}) {
   const summary = { restored: [], pinned: [], synced: [] };
   if (!isUsable()) return summary;
   if (!process.env.DATABASE_URL) {
@@ -292,6 +360,7 @@ async function hydrateEnvFromDatabase() {
   }
 
   const upserts = [];
+  const fileUpdates = {};
   for (const envKey of managedEnvKeys()) {
     const envValue = process.env[envKey] || null;
     const dbValue = stored.get(envKey) || null;
@@ -299,6 +368,7 @@ async function hydrateEnvFromDatabase() {
 
     if (!envValue) {
       process.env[envKey] = dbValue;
+      fileUpdates[envKey] = dbValue;
       summary.restored.push(envKey);
       continue;
     }
@@ -309,6 +379,7 @@ async function hydrateEnvFromDatabase() {
     // file cannot move it - only the settings UI can, deliberately.
     if (dbValue && VECTOR_KEYS.includes(envKey)) {
       process.env[envKey] = dbValue;
+      fileUpdates[envKey] = dbValue;
       summary.pinned.push(envKey);
       continue;
     }
@@ -322,6 +393,18 @@ async function hydrateEnvFromDatabase() {
     await alignVectorSignature(prisma);
   } catch (error) {
     warn(`Could not verify the embedding signature: ${error.message}`);
+  }
+
+  // The values just taken from the database are missing from the ENV file, so
+  // it is repaired on disk as well - the next start then works before the
+  // database is even reachable.
+  if (Object.keys(fileUpdates).length) {
+    try {
+      const written = syncEnvFile(fileUpdates, envFile || envFilePath());
+      log(`Wrote ${written} restored value(s) back into the ENV file.`);
+    } catch (error) {
+      warn(`Could not update the ENV file: ${error.message}`);
+    }
   }
 
   if (summary.restored.length)
@@ -393,11 +476,70 @@ async function persistEnvSettings(newValues = {}) {
   }
 }
 
+/**
+ * Reports connector credentials that can no longer be decrypted - the state a
+ * database is left in when SIG_KEY/SIG_SALT was replaced. The 1C/Bitrix24 and
+ * SQL rows stay listed, so the condition is surfaced at boot instead of being
+ * discovered by the users whose requests fail.
+ * @returns {Promise<{checked: number, unreadable: string[]}>}
+ */
+async function verifyEncryptedSecrets() {
+  const result = { checked: 0, unreadable: [] };
+  if (!isUsable() || !process.env.DATABASE_URL) return result;
+
+  const prisma = require("../prisma");
+  const { EncryptionManager } = require("../EncryptionManager");
+  const encryption = new EncryptionManager();
+  const check = (label, encrypted) => {
+    result.checked += 1;
+    if (encryption.decrypt(encrypted) === null) result.unreadable.push(label);
+  };
+
+  try {
+    const dataConnectors = await prisma.workspace_data_connectors.findMany({
+      where: { auth_secret: { not: null } },
+      select: { id: true, name: true, provider: true, auth_secret: true },
+    });
+    for (const connector of dataConnectors)
+      check(
+        `${connector.provider} "${connector.name}" (id ${connector.id})`,
+        connector.auth_secret
+      );
+
+    // A SQL connector always carries a connection string, so every row is one
+    // stored credential and there is nothing to filter out.
+    const sqlConnectors = await prisma.workspace_sql_connectors.findMany({
+      select: { id: true, name: true, engine: true, connection_string: true },
+    });
+    for (const connector of sqlConnectors)
+      check(
+        `${connector.engine} "${connector.name}" (id ${connector.id})`,
+        connector.connection_string
+      );
+  } catch (error) {
+    warn(
+      `Could not verify the stored connection credentials: ${error.message}`
+    );
+    return result;
+  }
+
+  if (result.unreadable.length)
+    warn(
+      `Stored credentials cannot be decrypted any more (${result.unreadable.join(
+        ", "
+      )}). Re-enter them in the workspace settings so they are encrypted with the current SIG_KEY.`
+    );
+  else if (result.checked)
+    log(`Read ${result.checked} stored connection credential(s) successfully.`);
+  return result;
+}
+
 module.exports = {
   hydrateEnvFromDatabase,
   persistEnvSettings,
   persistEnvValues,
   rememberVectorSignature,
+  verifyEncryptedSecrets,
   managedEnvKeys,
   currentVectorSignature,
 };

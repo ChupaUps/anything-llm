@@ -9,12 +9,19 @@ require("./utils/time/zone").applyStoredSystemTimeZone();
 // Restores the settings saved from the settings UI. They are mirrored into
 // PostgreSQL, so rebuilding the image - which starts the container from the
 // packaged ENV file - keeps the LLM credentials and the embedding selection.
-const { hydrateEnvFromDatabase } = require("./utils/settings/persistedEnv");
-const settingsHydrated = hydrateEnvFromDatabase().catch((error) => {
-  console.error(
-    `\x1b[33m[DB Settings]\x1b[0m Could not restore saved settings: ${error.message}`
-  );
-});
+const {
+  hydrateEnvFromDatabase,
+  verifyEncryptedSecrets,
+} = require("./utils/settings/persistedEnv");
+const settingsHydrated = hydrateEnvFromDatabase()
+  // Connector credentials (1C, Bitrix24, SQL) are encrypted with the
+  // SIG_KEY/SIG_SALT pair, so the restored key is checked against them.
+  .then(() => verifyEncryptedSecrets())
+  .catch((error) => {
+    console.error(
+      `\x1b[33m[DB Settings]\x1b[0m Could not restore saved settings: ${error.message}`
+    );
+  });
 
 require("./utils/logger")();
 require("./utils/boot/patchSdkTimeouts")();
