@@ -1,4 +1,5 @@
 import { AUTH_TOKEN, AUTH_USER } from "./constants";
+import { getStoredLanguage } from "./language";
 
 // Sets up the base headers for all authenticated requests so that we are able to prevent
 // basic spoofing since a valid token is required and that cannot be spoofed
@@ -13,7 +14,7 @@ export function baseHeaders(providedToken = null) {
   return {
     Authorization: token ? `Bearer ${token}` : null,
     "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-    "X-Language": window.localStorage.getItem("i18nextLng") || "ru",
+    "X-Language": getStoredLanguage(),
   };
 }
 

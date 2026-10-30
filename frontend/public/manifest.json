@@ -1,6 +1,7 @@
 {
   "name": "Interstorm-AI",
   "short_name": "Interstorm-AI",
+  "lang": "ru",
   "display": "standalone",
   "orientation": "portrait",
   "start_url": "/",

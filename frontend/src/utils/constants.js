@@ -27,6 +27,9 @@ export const CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT =
 
 export const APPEARANCE_SETTINGS = "anythingllm_appearance_settings";
 
+// Language explicitly picked in the settings. Absent means Russian.
+export const APP_LANGUAGE = "anythingllm_language";
+
 export const OLLAMA_COMMON_URLS = [
   "http://127.0.0.1:11434",
   "http://host.docker.internal:11434",

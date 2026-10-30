@@ -1,29 +1,40 @@
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 import { defaultNS, resources } from "./locales/resources";
+import {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  getStoredLanguage,
+  resolveLanguage,
+} from "@/utils/language";
+
+/**
+ * Keeps the <html lang> attribute aligned with what the user reads.
+ * @param {string} language
+ */
+function syncDocumentLanguage(language) {
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = resolveLanguage(language);
+}
 
 i18next
-  // https://github.com/i18next/i18next-browser-languageDetector/blob/9efebe6ca0271c3797bc09b84babf1ba2d9b4dbb/src/index.js#L11
   .use(initReactI18next) // Initialize i18n for React
-  .use(LanguageDetector)
   .init({
-    fallbackLng: "ru",
-    supportedLngs: ["ru", "en"],
+    // No language detector on purpose: a fresh browser always opens in
+    // Russian, and only the settings picker can store a different choice.
+    lng: getStoredLanguage(),
+    fallbackLng: DEFAULT_LANGUAGE,
+    supportedLngs: SUPPORTED_LANGUAGES,
     debug: import.meta.env.DEV,
     defaultNS,
     resources,
     lowerCaseLng: true,
-    detection: {
-      // Russian is the default for anyone who has not explicitly picked a
-      // language in the UI, so the browser locale is intentionally ignored.
-      order: ["localStorage"],
-      caches: ["localStorage"],
-      lookupLocalStorage: "i18nextLng",
-    },
     interpolation: {
       escapeValue: false,
     },
   });
+
+syncDocumentLanguage(i18next.resolvedLanguage);
+i18next.on("languageChanged", syncDocumentLanguage);
 
 export default i18next;

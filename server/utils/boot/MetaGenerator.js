@@ -29,6 +29,7 @@ class MetaGenerator {
   #defaultManifest = {
     name: "Interstorm-AI",
     short_name: "Interstorm-AI",
+    lang: "ru",
     display: "standalone",
     orientation: "portrait",
     start_url: "/",
@@ -320,7 +321,7 @@ class MetaGenerator {
     if (this.#customConfig === null) await this.#fetchConfg();
     response.status(code).send(`
        <!DOCTYPE html>
-        <html lang="en">
+        <html lang="ru">
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -364,6 +365,8 @@ class MetaGenerator {
       const manifest = {
         name: manifestName,
         short_name: manifestName,
+        // The product ships in Russian; the browser language is ignored.
+        lang: "ru",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
