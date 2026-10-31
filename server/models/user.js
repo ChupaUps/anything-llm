@@ -241,6 +241,29 @@ const User = {
   },
 
   /**
+   * Records whether the user has finished the guided product tour. The tour is
+   * shown on every load until this is set, so the state has to live in the
+   * database instead of the browser it was watched in.
+   * @param {number} userId - The id of the user to update.
+   * @param {boolean} completed - true when the tour was watched, false to reset.
+   * @returns {Promise<{user: Object|null, error: string|null}>}
+   */
+  setProductTourCompleted: async function (userId, completed = true) {
+    if (!userId) return { user: null, error: "No user id provided for update" };
+
+    try {
+      const user = await prisma.users.update({
+        where: { id: parseInt(userId) },
+        data: { productTourCompletedAt: completed ? new Date() : null },
+      });
+      return { user: this.filterFields(user), error: null };
+    } catch (error) {
+      console.error("FAILED TO UPDATE PRODUCT TOUR STATE.", error.message);
+      return { user: null, error: this._identifyErrorAndFormatMessage(error) };
+    }
+  },
+
+  /**
    * Explicit direct update of user object.
    * Only use this method when directly setting a key value
    * that takes no user input for the keys being modified.

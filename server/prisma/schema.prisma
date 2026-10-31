@@ -62,6 +62,9 @@ model users {
   role                         String                        @default("default")
   suspended                    Int                           @default(0)
   seen_recovery_codes          Boolean?                      @default(false)
+  // When this user finished the guided product tour. Kept in the database so
+  // a user who never watched it still gets it on the next sign-in.
+  productTourCompletedAt       DateTime?
   createdAt                    DateTime                      @default(now())
   lastUpdatedAt                DateTime                      @default(now())
   dailyMessageLimit            Int?

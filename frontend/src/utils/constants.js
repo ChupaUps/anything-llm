@@ -14,9 +14,8 @@ export const SESSION_REASONING_EFFORT_MAP =
 
 // Product tour (guided walkthrough of the app) glue. The tour itself lives in
 // `components/ProductTour` and is driven by window events so any component can
-// start it or steer the account modal it walks through.
-export const PRODUCT_TOUR_STORAGE_PREFIX = "anythingllm_product_tour";
-export const PRODUCT_TOUR_VERSION = 4;
+// start it or steer the account modal it walks through. Whether a user has
+// already watched it is stored on the user record on the server.
 export const START_PRODUCT_TOUR_EVENT = "anythingllm:start-product-tour";
 export const OPEN_ACCOUNT_MODAL_EVENT = "anythingllm:open-account-modal";
 export const CLOSE_ACCOUNT_MODAL_EVENT = "anythingllm:close-account-modal";

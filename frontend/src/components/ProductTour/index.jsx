@@ -13,14 +13,13 @@ import { ArrowLeft, ArrowRight, Check, X } from "@phosphor-icons/react";
 import useLoginMode from "@/hooks/useLoginMode";
 import useUser from "@/hooks/useUser";
 import Workspace from "@/models/workspace";
+import System from "@/models/system";
 import paths from "@/utils/paths";
 import {
   CLOSE_ACCOUNT_MODAL_EVENT,
   CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT,
   OPEN_ACCOUNT_MODAL_EVENT,
   OPEN_WORKSPACE_UPLOAD_MODAL_EVENT,
-  PRODUCT_TOUR_STORAGE_PREFIX,
-  PRODUCT_TOUR_VERSION,
   START_PRODUCT_TOUR_EVENT,
 } from "@/utils/constants";
 
@@ -33,36 +32,11 @@ const ANCHOR_FOLLOW_MS = 400;
 const TOOLS_BUTTON_ID = "tools-btn";
 const TOOLS_MENU_SELECTOR = '[data-tour="tools-menu"]';
 const AUTO_START_DELAY_MS = 1200;
-// Accounts older than this are treated as existing users: the tour never opens
-// on its own for them, they can replay it from their profile instead.
-const NEW_ACCOUNT_DAYS = 30;
 const TOOLTIP_WIDTH = 340;
 const TOOLTIP_GAP = 14;
 const VIEWPORT_MARGIN = 16;
 const DEFAULT_TOOLTIP_HEIGHT = 240;
 const HIGHLIGHT_PADDING = 6;
-
-/**
- * Storage key of the "tour completed" flag. Versioned so a redesign of the
- * steps can be rolled out to everyone by bumping `PRODUCT_TOUR_VERSION`.
- * @param {number|string} userId
- * @returns {string}
- */
-function completedKey(userId) {
-  return `${PRODUCT_TOUR_STORAGE_PREFIX}_v${PRODUCT_TOUR_VERSION}_${userId}`;
-}
-
-/**
- * @param {Object|null} user
- * @returns {boolean} whether the account was created recently enough for the
- * tour to start automatically on the first visit.
- */
-function isNewAccount(user = null) {
-  const createdAt = user?.createdAt || user?.created_at;
-  if (!createdAt) return false;
-  const age = Date.now() - new Date(createdAt).getTime();
-  return age >= 0 && age <= NEW_ACCOUNT_DAYS * 24 * 60 * 60 * 1000;
-}
 
 /**
  * Places the tour card next to the highlighted element, preferring the side
@@ -149,6 +123,9 @@ export default function ProductTour() {
   const { pathname } = useLocation();
   const [stepIndex, setStepIndex] = useState(null);
   const [anchorRect, setAnchorRect] = useState(null);
+  // Set once the tour is closed in this session, so a user who skipped it is
+  // not stopped by it again on every visit to the home page.
+  const [dismissed, setDismissed] = useState(false);
   const [tooltipHeight, setTooltipHeight] = useState(0);
   const tooltipRef = useRef(null);
 
@@ -220,6 +197,13 @@ export default function ProductTour() {
         title: t("product_tour.steps.agent.title"),
         description: t("product_tour.steps.agent.description"),
         anchors: ['[data-tour="prompt-input"]'],
+        placement: "top",
+      },
+      {
+        id: "website",
+        title: t("product_tour.steps.website.title"),
+        description: t("product_tour.steps.website.description"),
+        anchors: ['[data-code-run]', '[data-tour="prompt-input"]'],
         placement: "top",
       },
       {
@@ -297,8 +281,22 @@ export default function ProductTour() {
     window.dispatchEvent(new CustomEvent(CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT));
   }, []);
 
+  // Closing mid-way does not count as watching: nothing is recorded, so the
+  // tour is offered again on the next sign-in.
+  const closeTour = useCallback(() => {
+    setDismissed(true);
+    closeAccountModal();
+    closeToolsMenu();
+    closeUploadModal();
+    setAnchorRect(null);
+    setStepIndex(null);
+  }, [closeAccountModal, closeToolsMenu, closeUploadModal]);
+
   const finish = useCallback(() => {
-    if (user?.id) window.localStorage.setItem(completedKey(user.id), "done");
+    // The flag lives on the user record, not in the browser, so the walkthrough
+    // is not offered again on another device either.
+    System.setProductTourCompleted(true);
+    setDismissed(true);
     closeAccountModal();
     closeToolsMenu();
     closeUploadModal();
@@ -311,14 +309,7 @@ export default function ProductTour() {
       const personal = workspaces.find((workspace) => workspace.is_personal);
       if (personal?.slug) navigate(paths.workspace.chat(personal.slug));
     });
-  }, [
-    closeAccountModal,
-    closeToolsMenu,
-    closeUploadModal,
-    navigate,
-    pathname,
-    user?.id,
-  ]);
+  }, [closeAccountModal, closeToolsMenu, closeUploadModal, navigate, pathname]);
 
   // Route builder of the steps that leave the chat and end up on the user's own
   // workspace. Personal projects are addressed by slug, so each entry takes a
@@ -456,25 +447,23 @@ export default function ProductTour() {
     setTooltipHeight(node.offsetHeight || DEFAULT_TOOLTIP_HEIGHT);
   }, [stepIndex, anchorRect]);
 
-  // A new user gets the walkthrough on the home page; everyone else can start
-  // it from their profile (see the account modal footer).
+  // Everyone who has not watched the tour through to the end gets it on the
+  // home page - a fresh account and a months-old one alike. Users who already
+  // watched it can start it again from their profile (account modal footer).
   useEffect(() => {
     if (mode !== "multi" || !user?.id || stepIndex !== null || isMobile) return;
     if (pathname !== paths.home()) return;
-    if (window.localStorage.getItem(completedKey(user.id))) return;
-    if (!isNewAccount(user)) return;
+    if (dismissed || user?.productTourCompletedAt) return;
 
-    const key = completedKey(user.id);
-    const timer = setTimeout(() => {
-      // Re-check in case the tour was finished or dismissed meanwhile.
-      if (window.localStorage.getItem(key)) return;
-      setStepIndex(0);
-    }, AUTO_START_DELAY_MS);
+    const timer = setTimeout(() => setStepIndex(0), AUTO_START_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [mode, pathname, stepIndex, user]);
+  }, [dismissed, mode, pathname, stepIndex, user]);
 
   const handleRequestStart = useCallback(() => {
-    if (user?.id) window.localStorage.removeItem(completedKey(user.id));
+    // Replaying the tour marks the user as "not watched" again until they reach
+    // the end once more, so an interrupted replay is not lost.
+    if (user?.id) System.setProductTourCompleted(false);
+    setDismissed(false);
     closeAccountModal();
     closeToolsMenu();
     closeUploadModal();
@@ -533,7 +522,7 @@ export default function ProductTour() {
           </span>
           <button
             type="button"
-            onClick={finish}
+            onClick={closeTour}
             aria-label={t("product_tour.close")}
             className="-m-1 shrink-0 rounded-lg border-none bg-transparent p-1 text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-white light:text-slate-500 light:hover:bg-slate-100 light:hover:text-slate-900"
           >

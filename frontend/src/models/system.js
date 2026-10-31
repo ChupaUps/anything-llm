@@ -679,6 +679,18 @@ const System = {
         return { success: false, error: e.message };
       });
   },
+  setProductTourCompleted: async (completed = true) => {
+    return await fetch(`${API_BASE}/system/user/product-tour`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify({ completed }),
+    })
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, error: e.message };
+      });
+  },
   dataConnectors: DataConnector,
 
   getSlashCommandPresets: async function () {

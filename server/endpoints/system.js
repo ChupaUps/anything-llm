@@ -46,7 +46,10 @@ const { getCustomModels } = require("../utils/helpers/customModels");
 const { WorkspaceChats } = require("../models/workspaceChats");
 const { WorkspaceThread } = require("../models/workspaceThread");
 const { WorkspaceParsedFiles } = require("../models/workspaceParsedFiles");
-const { flexUserRoleValid, ROLES } = require("../utils/middleware/multiUserProtected");
+const {
+  flexUserRoleValid,
+  ROLES,
+} = require("../utils/middleware/multiUserProtected");
 const { fetchPfp, determinePfpFilepath } = require("../utils/files/pfp");
 const { exportChatsAsType } = require("../utils/helpers/chat/convertTo");
 const { EventLogs } = require("../models/eventLogs");
@@ -1279,6 +1282,39 @@ function systemEndpoints(app) {
     }
   });
 
+  // Records that the signed-in user watched (or wants to replay) the guided
+  // product tour. The flag lives on the user so the tour is offered again on
+  // the next sign-in until it was actually watched through to the end.
+  app.post(
+    "/system/user/product-tour",
+    [validatedRequest],
+    async (request, response) => {
+      try {
+        const sessionUser = await userFromSession(request, response);
+        const id = Number(sessionUser?.id);
+        if (!id) {
+          response
+            .status(400)
+            .json({ success: false, error: "Invalid user ID" });
+          return;
+        }
+
+        const { completed = true } = reqBody(request);
+        const { user, error } = await User.setProductTourCompleted(
+          id,
+          Boolean(completed)
+        );
+        response.status(200).json({ success: !error, user, error });
+      } catch (e) {
+        console.error(e);
+        response.status(500).json({
+          success: false,
+          error: e.message || "Internal server error",
+        });
+      }
+    }
+  );
+
   app.get(
     "/system/slash-command-presets",
     [validatedRequest, flexUserRoleValid([ROLES.all])],
@@ -1559,7 +1595,9 @@ function systemEndpoints(app) {
         // The real clip length is read from the container so accounting does
         // not depend on the browser - the client value is only a fallback for
         // installs without ffprobe.
-        const { measureAudioDuration } = require("../utils/SpeechToText/helpers");
+        const {
+          measureAudioDuration,
+        } = require("../utils/SpeechToText/helpers");
         const measuredSeconds = await measureAudioDuration(
           request.file.buffer,
           path.extname(request.file.originalname || "audio.webm")

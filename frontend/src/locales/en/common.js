@@ -2189,6 +2189,11 @@ const TRANSLATIONS = {
         description:
           "The system runs in agent mode: it browses the internet on its own, looks up the data it needs and can answer with more than text - it can build a presentation, an Excel file, a Word document or an image when you ask for one.\n\nThere is nothing to switch on: just type your command in the chat you need.",
       },
+      website: {
+        title: "Web pages and HTML code",
+        description:
+          'You can ask for a web page or HTML code - for example "build a landing page for our service" or "put together a request form".\n\nWhen the result is ready, a Run button appears on the code block: press it and the page opens right inside the chat, so you can look at it immediately without downloading anything.',
+      },
       tools: {
         title: "Tools",
         description:
