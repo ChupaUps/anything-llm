@@ -51,6 +51,12 @@ const {
   ROLES,
 } = require("../utils/middleware/multiUserProtected");
 const { fetchPfp, determinePfpFilepath } = require("../utils/files/pfp");
+const {
+  fetchAssistantIcon,
+  hasAssistantIcon,
+  saveAssistantIcon,
+  removeAssistantIcon,
+} = require("../utils/files/assistantIcon");
 const { exportChatsAsType } = require("../utils/helpers/chat/convertTo");
 const { EventLogs } = require("../models/eventLogs");
 const { CollectorApi } = require("../utils/collectorApi");
@@ -1029,6 +1035,99 @@ function systemEndpoints(app) {
     }
   );
 
+  // The assistant avatar shown next to model replies in the chat embed widget.
+  // Public because embed visitors are anonymous - the widget just uses it as an
+  // <img> src. 204 means "no custom icon", and the widget keeps its built-in one.
+  app.get("/system/assistant-icon", async function (request, response) {
+    try {
+      const { found, buffer, size, mime } = await fetchAssistantIcon();
+      if (!found) {
+        response.sendStatus(204).end();
+        return;
+      }
+
+      response.writeHead(200, {
+        "Content-Type": mime,
+        "Content-Length": size,
+        "Content-Disposition": "inline",
+        "Cache-Control": "no-cache",
+        "Access-Control-Allow-Origin": "*",
+      });
+      response.end(Buffer.from(buffer, "base64"));
+      return;
+    } catch (error) {
+      console.error("Error processing the assistant icon request:", error);
+      response.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/system/assistant-icon/status", async (_, response) => {
+    try {
+      response.status(200).json({ hasCustomIcon: await hasAssistantIcon() });
+    } catch (error) {
+      console.error("Error processing the assistant icon status:", error);
+      response.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post(
+    "/system/upload-assistant-icon",
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      handleAssetUpload,
+    ],
+    async (request, response) => {
+      if (!request?.file || !request?.file.originalname) {
+        return response
+          .status(400)
+          .json({ message: "No assistant icon file provided." });
+      }
+
+      if (!validFilename(request.file.originalname)) {
+        return response.status(400).json({
+          message: "Invalid file name. Please choose a different file.",
+        });
+      }
+
+      try {
+        const { success, error } = await saveAssistantIcon(
+          request.file.originalname
+        );
+        return response.status(success ? 200 : 500).json({
+          message: success
+            ? "Assistant icon uploaded successfully."
+            : error || "Failed to update with new assistant icon.",
+        });
+      } catch (error) {
+        console.error("Error processing the assistant icon upload:", error);
+        response
+          .status(500)
+          .json({ message: "Error uploading the assistant icon." });
+      }
+    }
+  );
+
+  app.get(
+    "/system/remove-assistant-icon",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (_request, response) => {
+      try {
+        const { success, error } = await removeAssistantIcon();
+        return response.status(success ? 200 : 500).json({
+          message: success
+            ? "Assistant icon removed successfully."
+            : error || "Failed to remove the assistant icon.",
+        });
+      } catch (error) {
+        console.error("Error processing the assistant icon removal:", error);
+        response
+          .status(500)
+          .json({ message: "Error removing the assistant icon." });
+      }
+    }
+  );
+
   app.get("/system/api-keys", [validatedRequest], async (_, response) => {
     try {
       if (response.locals.multiUserMode) {
@@ -1282,9 +1381,9 @@ function systemEndpoints(app) {
     }
   });
 
-  // Records that the signed-in user watched (or wants to replay) the guided
-  // product tour. The flag lives on the user so the tour is offered again on
-  // the next sign-in until it was actually watched through to the end.
+  // Records that the signed-in user has been through the guided product tour.
+  // Walking it to the end and closing it both count, so nobody is nagged, while
+  // users with no value here still get the tour on their next sign-in.
   app.post(
     "/system/user/product-tour",
     [validatedRequest],

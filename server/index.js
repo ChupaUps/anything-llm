@@ -158,6 +158,18 @@ embeddedEndpoints(apiRouter);
 // Externally facing browser extension endpoints
 browserExtensionEndpoints(apiRouter);
 
+// Legacy clean URL for the inline embed page. The actual route lives under
+// /api/embed (apiRouter), so without this redirect the URL would fall through
+// to the SPA catch-all below and show the main app login screen in the iframe.
+app.get("/embed/:embedId/inline", function (request, response) {
+  // Forward the query string too - the inline page reads `?lang=` from it.
+  const queryString = request.url.split("?").slice(1).join("?");
+  response.redirect(
+    307,
+    `/api/embed/${request.params.embedId}/inline${queryString ? `?${queryString}` : ""}`
+  );
+});
+
 if (process.env.NODE_ENV !== "development") {
   const { MetaGenerator } = require("./utils/boot/MetaGenerator");
   const IndexPage = new MetaGenerator();

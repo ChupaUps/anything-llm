@@ -10,6 +10,11 @@ const {
 } = require("../helpers/chat/responses");
 const { DocumentManager } = require("../DocumentManager");
 const { abortConnectorOnClientDisconnect } = require("../helpers/abortSignals");
+const { Telemetry } = require("../../models/telemetry");
+const {
+  EphemeralAgentHandler,
+  EphemeralEventListener,
+} = require("../agents/ephemeral");
 
 async function streamChatWithForEmbed(
   response,
@@ -21,8 +26,82 @@ async function streamChatWithForEmbed(
   sessionId,
   { promptOverride, modelOverride, temperatureOverride, username }
 ) {
-  // Automatic mode is NOT valid for embeds, so we default to chat mode.
   let chatMode = embed.chat_mode ?? "chat";
+
+  const uuid = uuidv4();
+
+  // Agent mode: if chat_mode is "automatic" (or @agent command detected) use
+  // EphemeralAgentHandler so the widget receives results over HTTP SSE chunks
+  // without needing a WebSocket connection.
+  if (
+    await EphemeralAgentHandler.isAgentInvocation({
+      message,
+      workspace: embed.workspace,
+      chatMode,
+    })
+  ) {
+    await Telemetry.sendTelemetry("agent_chat_started");
+    const agentHandler = new EphemeralAgentHandler({
+      uuid,
+      workspace: embed.workspace,
+      prompt: message,
+      userId: null,
+      threadId: null,
+      sessionId,
+    });
+    const eventListener = new EphemeralEventListener();
+    try {
+      await agentHandler.init();
+      await agentHandler.createAIbitat({ handler: eventListener });
+      agentHandler.startAgentCluster();
+
+      const { thoughts, textResponse, outputs, metrics, citations } =
+        await eventListener.streamAgentEvents(response, uuid);
+
+      if (textResponse?.length > 0) {
+        await EmbedChats.new({
+          embedId: embed.id,
+          prompt: message,
+          response: {
+            text: textResponse,
+            type: "agent",
+            thoughts,
+            sources: citations || [],
+            outputs: [
+              ...(outputs || []),
+              ...(agentHandler.getPendingOutputs?.() || []),
+            ],
+            metrics,
+          },
+          connection_information: response.locals.connection
+            ? {
+                ...response.locals.connection,
+                username: !!username ? String(username) : null,
+              }
+            : { username: !!username ? String(username) : null },
+          sessionId,
+        });
+      }
+
+      await UsageEvents.logLLMUsage({
+        metrics,
+        workspace: embed.workspace,
+        source: "embed",
+      });
+    } catch (agentError) {
+      writeResponseChunk(response, {
+        id: uuid,
+        type: "abort",
+        textResponse: null,
+        sources: [],
+        close: true,
+        error: `Agent error: ${agentError.message}`,
+      });
+    }
+    return;
+  }
+
+  // If automatic mode but no agent provider — fall back to plain chat.
   if (chatMode === "automatic") chatMode = "chat";
 
   const chatModel = embed.allow_model_override ? modelOverride : null;
@@ -34,7 +113,6 @@ async function streamChatWithForEmbed(
   if (embed.allow_temperature_override && !Number.isNaN(temperatureValue))
     embed.workspace.openAiTemp = temperatureValue;
 
-  const uuid = uuidv4();
   const messageLimit = embed.message_limit ?? 20;
   const {
     connector: LLMConnector,

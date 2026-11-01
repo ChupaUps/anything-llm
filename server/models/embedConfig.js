@@ -4,9 +4,9 @@ const prisma = require("../utils/prisma");
  * Valid chat modes for embeds.
  * - chat: Chat mode will use the workspace's chat mode.
  * - query: Query mode will use the workspace's query mode.
- * - automatic: Automatic mode is NOT supported for embeds.
+ * - automatic: Agent mode via EphemeralAgentHandler over HTTP SSE.
  */
-const VALID_CHAT_MODE = ["chat", "query"];
+const VALID_CHAT_MODE = ["chat", "query", "automatic"];
 
 const EmbedConfig = {
   writable: [
@@ -278,4 +278,4 @@ function validatedCreationData(value, field) {
   return null;
 }
 
-module.exports = { EmbedConfig };
+module.exports = { EmbedConfig, VALID_CHAT_MODE };

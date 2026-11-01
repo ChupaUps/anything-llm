@@ -76,6 +76,7 @@ const SystemSettings = {
   ],
   supportedFields: [
     "logo_filename",
+    "embed_assistant_icon_filename",
     "telemetry_id",
     "footer_data",
     "support_email",

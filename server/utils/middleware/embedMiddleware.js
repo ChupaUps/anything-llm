@@ -1,7 +1,6 @@
 const { v4: uuidv4, validate } = require("uuid");
-const { VALID_CHAT_MODE } = require("../chats/stream");
 const { EmbedChats } = require("../../models/embedChats");
-const { EmbedConfig } = require("../../models/embedConfig");
+const { EmbedConfig, VALID_CHAT_MODE } = require("../../models/embedConfig");
 const { reqBody } = require("../http");
 
 // Finds or Aborts request for a /:embedId/ url. This should always
