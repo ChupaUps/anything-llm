@@ -151,19 +151,34 @@ function embeddedEndpoints(app) {
   <link rel="stylesheet" href="${baseUrl}/embed/anythingllm-chat-widget.min.css">
   <style>
     *,*::before,*::after{box-sizing:border-box}
-    html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;background:#18181b}
+    html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;background:#ffffff}
     /* Hide the floating bubble button in inline mode */
     #anything-llm-embed-chat-button,
     #anything-llm-embed-chat-button-container{display:none!important}
     /* Chat panel fills the entire iframe viewport */
     #anything-llm-embed-chat-container{
-      position:static!important;
+      position:static!important;display:block!important;
       width:100%!important;height:100vh!important;
       max-width:100%!important;max-height:100vh!important;
       border-radius:0!important;box-shadow:none!important;
-      display:flex!important;opacity:1!important;
+      opacity:1!important;
       transform:none!important;pointer-events:all!important;
     }
+    /* The widget renders the panel itself as a 400x700 floating card, so in
+       inline mode it has to be turned back into a plain block that fills the
+       frame: no rounded corners, border, shadow or offset margins. */
+    #anything-llm-chat{
+      position:static!important;display:flex!important;
+      width:100%!important;height:100vh!important;
+      max-width:100%!important;max-height:100vh!important;
+      margin:0!important;border:0!important;
+      border-radius:0!important;box-shadow:none!important;
+    }
+    #anything-llm-header{border-radius:0!important}
+    /* "Close" is meaningless here - it would only leave the frame blank - and
+       the aria-label is a literal baked into the pre-built bundle. */
+    #anything-llm-header button[aria-label="Закрыть чат"],
+    #anything-llm-header .allm-absolute button:last-child{display:none!important}
   </style>
 </head>
 <body>
