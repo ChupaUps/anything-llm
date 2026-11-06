@@ -17,6 +17,7 @@ const { requestUserInput } = require("./request-user-input.js");
 const { createScheduledJob } = require("./create-scheduled-job/index.js");
 const { modelRouterCooldown } = require("./model-router-cooldown.js");
 const { externalData } = require("./external-data.js");
+const { personalIntegrationsAgent } = require("./personal-integrations/index.js");
 
 module.exports = {
   webScraping,
@@ -38,6 +39,7 @@ module.exports = {
   createScheduledJob,
   modelRouterCooldown,
   externalData,
+  personalIntegrationsAgent,
 
   // Plugin name aliases so they can be pulled by slug as well.
   [webScraping.name]: webScraping,
@@ -59,4 +61,5 @@ module.exports = {
   [createScheduledJob.name]: createScheduledJob,
   [modelRouterCooldown.name]: modelRouterCooldown,
   [externalData.name]: externalData,
+  [personalIntegrationsAgent.name]: personalIntegrationsAgent,
 };

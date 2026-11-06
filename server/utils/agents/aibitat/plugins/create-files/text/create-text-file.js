@@ -130,19 +130,21 @@ module.exports.CreateTextFile = {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: createFilesLib.clampSourceContent(content),
               });
 
               createFilesLib.registerOutput(this.super, "TextFileDownload", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: content,
               });
 
               this.super.introspect(
                 `${this.caller}: Successfully created text file "${displayFilename}"`
               );
 
-              return `Successfully created text file "${displayFilename}" (${bufferSizeKB}KB).`;
+              return `Successfully created text file "${displayFilename}" (${bufferSizeKB}KB). A download button for this file is shown automatically in the chat UI - do NOT write any download link, URL, markdown link, or file path (e.g. /mnt/data/...) in your reply; simply tell the user the file is ready.`;
             } catch (e) {
               this.super.handlerProps.log(
                 `create-text-file error: ${e.message}`

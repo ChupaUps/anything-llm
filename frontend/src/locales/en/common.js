@@ -89,6 +89,73 @@ const TRANSLATIONS = {
       "You currently aren't assigned to any workspaces.\nPlease contact your administrator to request access to a workspace.",
     goToWorkspace: 'Go to "{{workspace}}"',
   },
+  errorNotifications: {
+    title: "Error Notifications",
+    description:
+      "Get alerted by email and/or Telegram whenever something goes wrong on the server. Each alert includes your server name and the error log.",
+    save: "Save changes",
+    saving: "Saving...",
+    sending: "Sending...",
+    simulate: "Send a test error alert",
+    enable: {
+      label: "Enable error notifications",
+      description:
+        "Master switch. When off, no alerts are sent even if channels are configured.",
+    },
+    serverName: {
+      title: "General",
+      description: "Identify this server in every alert message.",
+      label: "Server name",
+      placeholder: "e.g. Production AI Server",
+    },
+    minInterval: {
+      label: "Minimum interval between identical alerts (seconds)",
+    },
+    capture: {
+      title: "What to alert on",
+      description: "Choose which kinds of failures trigger a notification.",
+      process: "Process crashes (uncaught exceptions & rejections)",
+      http: "HTTP 500 server errors",
+      agent: "Agent & scheduled-task errors",
+      exitOnFatal: "Alert, then exit on a fatal crash",
+      exitOnFatalHint:
+        "After sending the alert for an uncaught exception, stop the process so the container restarts a clean instance. Only applies when 'Process crashes' above is enabled.",
+    },
+    email: {
+      title: "Email (SMTP)",
+      description: "Send alerts through your own SMTP server.",
+      enable: "Send alerts via email",
+      host: "SMTP host",
+      port: "Port",
+      secure: "Use SSL/TLS (secure)",
+      secureHint: "Enable implicit TLS. Usually port 465.",
+      user: "SMTP username",
+      pass: "SMTP password",
+      passSaved: "Saved — leave blank to keep",
+      from: "From address",
+      to: "Recipient(s)",
+      toHint: "Comma-separated for multiple recipients",
+      test: "Send test email",
+    },
+    telegram: {
+      title: "Telegram bot",
+      description:
+        "Create a bot with @BotFather, paste its token, and enter your chat id.",
+      enable: "Send alerts via Telegram",
+      token: "Bot token",
+      tokenSaved: "Saved — leave blank to keep",
+      chatId: "Chat id",
+      chatIdHint: "Numeric chat id (negative for groups)",
+      test: "Send test message",
+    },
+    toast: {
+      saved: "Error notification settings saved.",
+      saveError: "Failed to save settings: {{error}}",
+      testSent: "Test alert sent via {{channel}}.",
+      testError: "Test failed: {{error}}",
+      simulated: "Test error alert dispatched.",
+    },
+  },
   settings: {
     title: "Instance Settings",
     invites: "Invites",
@@ -111,6 +178,7 @@ const TRANSLATIONS = {
     embeds: "Chat Embed",
     security: "Security",
     "event-logs": "Event Logs",
+    "error-notifications": "Error Notifications",
     "scheduled-jobs": "Scheduled Jobs",
     privacy: "Privacy & Data",
     "ai-providers": "AI Providers",
@@ -209,8 +277,112 @@ const TRANSLATIONS = {
     vector: "Vector Database",
     members: "Members",
     agent: "Agent Configuration",
+    agentSkills: "Agent Skills",
     dataConnectors: "Data & API",
     sqlConnectors: "SQL databases",
+    integrations: "Integrations",
+  },
+  workspaceAgentSkills: {
+    title: "Agent skills in this workspace",
+    description:
+      "Every skill the admin enabled globally is on here by default. Switch a skill off to remove it from this workspace's agent only — for example turn off web-scraping and web-browsing in a RAG+SQL workspace so the agent never hits the internet.",
+    hint: "Changes apply to the next chat turn. Other workspaces keep the admin-wide configuration.",
+    loading: "Loading skills...",
+    saveError: "Could not save skill settings.",
+    sections: {
+      default: "Built-in skills",
+      configurable: "Configurable skills",
+      integrations: "App integrations",
+      workspaceScoped: "Workspace connectors",
+    },
+    externalData: {
+      title: "External data (1C / Bitrix24)",
+      description:
+        "Live data pulled by the workspace's Data & API connections.",
+    },
+    sqlAgent: {
+      title: "SQL databases",
+      description:
+        "Query tools exposed by the databases connected in this workspace.",
+    },
+    personalIntegrations: {
+      title: "Personal mail / calendar",
+      description:
+        "Mail and calendar accounts the workspace owner attached on the Integrations tab.",
+    },
+  },
+  workspaceIntegrations: {
+    title: "Personal mail & calendar integrations",
+    description:
+      "Attach your own Yandex or Mail.ru account so the agent can read mail, save drafts and add events to the calendar in this workspace. Nothing is shared with other users.",
+    hint: "Use a dedicated app password (not your main one) — you can revoke it any time from the provider's security page.",
+    loading: "Loading integrations...",
+    empty:
+      "No accounts connected yet. Click “Add account” to attach your mailbox.",
+    add: "Add account",
+    addTitle: "New integration",
+    editTitle: "Edit integration",
+    deleteTitle: "Remove integration",
+    deleteMessage: "Remove {{name}}? The agent will stop seeing this mailbox.",
+    save: "Save",
+    saving: "Saving...",
+    cancel: "Cancel",
+    remove: "Remove",
+    enabled: "Enabled",
+    test: "Test connection",
+    testing: "Testing...",
+    testOk: "IMAP login succeeded.",
+    testFailed: "Connection test failed",
+    saved: "Integration saved.",
+    saveError: "Could not save the integration.",
+    incomplete:
+      "Fill provider, name, email, app password and at least one scope.",
+    testNeedsSaved: "Save the integration first, then run the test.",
+    providerLabel: "Provider",
+    providerHasBoth: "Mail + calendar",
+    providerHasEmailOnly: "Mail only",
+    nameLabel: "Display name",
+    namePlaceholder: "e.g. My Yandex mail",
+    emailLabel: "Email address",
+    emailHint:
+      "The exact address you use to sign in — this is what appears in the From header.",
+    authUserLabel: "IMAP login",
+    authUserHint:
+      "Usually the same as the email address. Only override for corporate domains.",
+    appPasswordLabel: "App password",
+    appPasswordLabelExisting:
+      "App password (leave empty to keep the stored one)",
+    appPasswordKeepEmpty: "Stored — type a new one only if you rotated it",
+    appPasswordHelp: "How to generate an app password",
+    scopesLabel: "What the agent is allowed to do",
+    pickProviderFirst: "Pick a provider to see available scopes.",
+    scopeEmailRead: "Read mail",
+    scopeEmailDraft: "Create drafts",
+    scopeCalendarCreate: "Create calendar events",
+    scopeLabels: {
+      "email:read": "Read mail",
+      "email:draft": "Create email drafts",
+      "calendar:create": "Create calendar events",
+    },
+    scopeDescriptions: {
+      "email:read":
+        "Agent can list recent messages and open one by uid. It never deletes or marks as read.",
+      "email:draft":
+        "Agent can save unfinished messages to the Drafts folder. Nothing is sent automatically.",
+      "calendar:create":
+        "Agent can create new events via CalDAV. It never edits or deletes existing ones.",
+    },
+    showAdvanced: "Show advanced (custom IMAP / CalDAV hosts)",
+    hideAdvanced: "Hide advanced",
+    imapHostLabel: "IMAP host",
+    imapPortLabel: "IMAP port",
+    smtpHostLabel: "SMTP host",
+    smtpPortLabel: "SMTP port",
+    caldavUrlLabel: "CalDAV URL",
+    calendarPathLabel: "Calendar path (optional)",
+    statusOk: "Working",
+    statusError: "Failing",
+    statusNever: "Never tested",
   },
   dataConnector: {
     title: "Data & API",
@@ -1058,6 +1230,11 @@ const TRANSLATIONS = {
             "How many clarifying questions the agent may ask in a single survey.",
         },
       },
+      personalIntegrations: {
+        title: "Personal integrations (mail & calendar)",
+        description:
+          "When enabled, users can connect their own Yandex / Mail.ru mail and calendar in workspace settings and let the agent read mail, create drafts and add events. Turning this off hides the Integrations tab for everyone.",
+      },
     },
   },
   recorded: {
@@ -1192,6 +1369,19 @@ const TRANSLATIONS = {
         recommended: "Recommended size: 800 x 200",
         remove: "Remove",
         replace: "Replace",
+      },
+      "assistant-icon": {
+        title: "Assistant Avatar In Chat Widget",
+        description:
+          "Upload the avatar shown next to model replies in the chat widget. When empty, the built-in icon is used.",
+        add: "Add an assistant avatar",
+        recommended: "Recommended size: 96 x 96 (square)",
+        remove: "Remove",
+        replace: "Replace",
+        uploaded: "Avatar uploaded successfully.",
+        uploadFailed: "Failed to upload avatar",
+        removed: "Avatar removed successfully.",
+        removeFailed: "Failed to remove avatar",
       },
       "browser-appearance": {
         title: "Browser Appearance",
@@ -1459,6 +1649,23 @@ const TRANSLATIONS = {
         "Routed to <route>{{model}}</route> via <rule>{{ruleTitle}}</rule>",
     },
   },
+  chatFallback: {
+    title: "Fallback chat model",
+    description:
+      "When the default chat model returns a transient error (rate limit, provider outage, or timeout), the request is automatically retried on this alternate model so users keep getting answers instead of an error.",
+    enable: "Enable fallback model",
+    enableHint:
+      "Only retriggers on 429/5xx/network errors — not on invalid requests or auth problems.",
+    pickerLabel: "Fallback provider & model",
+    pickerHint: "Choose an already-configured provider to fall back to.",
+    save: "Save fallback settings",
+    saving: "Saving...",
+    toast: {
+      saved: "Fallback model saved",
+      saveError: "Could not save fallback settings: {{error}}",
+      providerRequired: "Select a fallback provider before saving",
+    },
+  },
   transcription: {
     title: "Transcription Model Preference",
     description:
@@ -1540,6 +1747,103 @@ const TRANSLATIONS = {
       active: "Active Domains",
       created: "Created",
     },
+    page: {
+      title: "Chat Embed",
+      back: "Back",
+      viewWidgets: "Widgets",
+      viewHistory: "History",
+    },
+    row: {
+      code: "Code",
+      enable: "Enable",
+      disable: "Disable",
+      delete: "Delete",
+      allDomains: "all",
+      disableConfirm:
+        "Are you sure you want to disabled this embed?\nOnce disabled the embed will no longer respond to any chat requests.",
+      deleteConfirm:
+        "Are you sure you want to delete this embed?\nOnce deleted this embed will no longer respond to chats or be active.\n\nThis action is irreversible.",
+      disabledToast: "Embed has been disabled.",
+      activatedToast: "Embed is active.",
+      deletedToast: "Embed deleted from system.",
+    },
+    modal: {
+      createTitle: "Create new embed for workspace",
+      createCta: "Create embed",
+      editTitle: "Update embed #{{id}}",
+      editCta: "Update embed",
+      updatedToast: "Embed updated successfully.",
+      cancel: "Cancel",
+      error: "Error: {{message}}",
+      noteStart:
+        "After creating an embed you will be provided a link that you can publish on your website with a simple",
+      noteEnd: "tag.",
+      workspaceTitle: "Workspace",
+      workspaceHint:
+        "This is the workspace your chat window will be based on. All defaults will be inherited from the workspace unless overridden by this config.",
+      chatModeTitle: "Allowed chat method",
+      chatModeHint1:
+        "Set how your chatbot should operate. Query means it will only respond if a document helps answer the query.",
+      chatModeHint2:
+        "Chat opens the chat to even general questions and can answer totally unrelated queries to your workspace.",
+      chatModeHint3:
+        "Agent enables tool-calling skills (web search, file operations, code interpreter) via the workspace agent — works over HTTP SSE, no WebSocket needed.",
+      chatModeAgent: "Agent: Enable tool-calling skills (web, files, code)",
+      chatModeChat: "Chat: Respond to all questions regardless of context",
+      chatModeQuery:
+        "Query: Only respond to chats related to documents in workspace",
+      domainsTitle: "Restrict requests from domains",
+      domainsHint:
+        "This filter will block any requests that come from a domain other than the list below.",
+      domainsHint2:
+        "Leaving this empty means anyone can use your embed on any site.",
+      domainsPlaceholder: "https://mysite.com, https://interstorm.ru",
+      maxChatsDayTitle: "Max chats per day",
+      maxChatsDayHint:
+        "Limit the amount of chats this embedded chat can process in a 24 hour period. Zero is unlimited.",
+      maxChatsSessionTitle: "Max chats per session",
+      maxChatsSessionHint:
+        "Limit the amount of chats a session user can send with this embed in a 24 hour period. Zero is unlimited.",
+      messageLimitTitle: "Message History Limit",
+      messageLimitHint:
+        "The number of previous messages to include in the chat context. Default is 20.",
+      allowModelTitle: "Enable dynamic model use",
+      allowModelHint:
+        "Allow setting of the preferred LLM model to override the workspace default.",
+      allowTemperatureTitle: "Enable dynamic LLM temperature",
+      allowTemperatureHint:
+        "Allow setting of the LLM temperature to override the workspace default.",
+      allowPromptTitle: "Enable Prompt Override",
+      allowPromptHint:
+        "Allow setting of the system prompt to override the workspace default.",
+    },
+    code: {
+      title: "Embed your chat",
+      tabPopup: "Popup Widget",
+      tabInline: "Inline Embed",
+      close: "Close",
+      copy: "Copy code",
+      copied: "Copied!",
+      copiedToast: "Copied to clipboard!",
+      sponsorUrl: "https://www.interstorm.ru/interstormllm",
+      popupComment:
+        "Popup chat widget. Paste this script at the bottom of your page, before the </body> tag. The chat opens as a floating bubble in the bottom corner.",
+      inlineComment:
+        "Inline chat panel. Paste this iframe anywhere inside your page <body>. The chat fills the frame with no floating button.",
+      previewTitle: "Chat widget preview",
+      popupLabel: "Floating Chat Bubble",
+      popupHint:
+        "Adds a clickable chat button in the bottom corner of your site. The visitor clicks it to open the chat panel. Supports agent mode when the embed is configured with the Agent chat mode.",
+      popupDocsLink: "View all style & configuration options",
+      inlineLabel: "Inline Chat Panel",
+      inlineHint:
+        "Embeds the chat directly inside a block on your page - full container width, no launcher button and no close button. Useful for landing pages, help centres, and product demos. Supports agent mode.",
+      inlineHeight: "Panel height",
+      inlinePreview: "Live preview",
+      // Left empty on purpose: the widget bundle already shows the correct
+      // English empty-state text, so no override should be emitted.
+      greeting: "",
+    },
   },
   "embed-chats": {
     title: "Embed Chat History",
@@ -1552,6 +1856,18 @@ const TRANSLATIONS = {
       message: "Message",
       response: "Response",
       at: "Sent At",
+    },
+    viewingText: "Viewing Text",
+    viewThoughts: "View thoughts",
+    exportSuccess: "Embed chats exported successfully as {{name}}.",
+    exportFailed: "Failed to export embed chats.",
+    deleteConfirm:
+      "Are you sure you want to delete this chat?\n\nThis action is irreversible.",
+    connection: {
+      session: "sessionID",
+      username: "username",
+      ip: "client ip address",
+      host: "client host URL",
     },
   },
   telegram: {
@@ -2480,6 +2796,27 @@ const TRANSLATIONS = {
         spreadsheet: "Spreadsheet",
         generic: "File",
       },
+    },
+  },
+  chatPreview: {
+    preview: "Preview",
+    close: "Close",
+    download: "Download",
+    downloading: "Downloading...",
+    loading: "Loading preview...",
+    noPreview: "Preview is not available for this file.",
+    error: "Could not load the preview.",
+    sheet: "Sheet",
+    slide: "Slide",
+    slidesCount: "{{count}} slides",
+    types: {
+      powerpoint: "PowerPoint Presentation",
+      pdf: "PDF Document",
+      word: "Word Document",
+      spreadsheet: "Spreadsheet",
+      csv: "CSV File",
+      text: "Text File",
+      generic: "File",
     },
   },
 };

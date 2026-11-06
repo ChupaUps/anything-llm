@@ -9,6 +9,10 @@ const { v4: uuidv4 } = require("uuid");
  * All generated files are saved to storage/generated-files directory.
  */
 class CreateFilesManager {
+  // Max characters of a generated document's source content that is persisted in
+  // chat history and streamed to the live preview card.
+  static MAX_SOURCE_CONTENT_LENGTH = 40_000;
+
   #outputDirectory = null;
   #isInitialized = false;
 
@@ -167,10 +171,89 @@ class CreateFilesManager {
       aibitat._pendingOutputs = [];
     }
 
+    // Bound the stored source content so document text persisted in the chat
+    // response (and later replayed into agent context) cannot grow unbounded.
+    if (payload && "sourceContent" in payload) {
+      payload = {
+        ...payload,
+        sourceContent: this.clampSourceContent(payload.sourceContent),
+      };
+    }
+
     aibitat._pendingOutputs.push({ type, payload });
     console.log(
       `[CreateFilesManager] Registered output: type=${type}, total pending=${aibitat._pendingOutputs.length}`
     );
+  }
+
+  /**
+   * Truncates persisted/live source content so a generated document's replayed
+   * content (chat history context + in-chat preview) stays bounded. Shared by
+   * `registerOutput` (DB) and the live `fileDownloadCard` websocket event so both
+   * carry an identical preview payload.
+   * @param {*} value - the source content, typically a string
+   * @returns {*} the value, sliced to {@link CreateFilesManager.MAX_SOURCE_CONTENT_LENGTH} when a longer string
+   */
+  clampSourceContent(value) {
+    if (typeof value !== "string") return value;
+    return value.length > CreateFilesManager.MAX_SOURCE_CONTENT_LENGTH
+      ? value.slice(0, CreateFilesManager.MAX_SOURCE_CONTENT_LENGTH)
+      : value;
+  }
+
+  /**
+   * Serialize a structured preview payload (pptx slides, xlsx sheets) so that it
+   * ALWAYS stays valid JSON and within the size budget. Plain `clampSourceContent`
+   * byte-slicing would corrupt JSON (invalid -> in-chat preview breaks), so for
+   * array-shaped payloads we drop trailing list items instead of trailing bytes.
+   * @param {object} obj - the payload object
+   * @param {string} arrayKey - the key holding the array to trim (e.g. "slides", "sheets")
+   * @param {number} [max] - character budget; defaults to MAX_SOURCE_CONTENT_LENGTH
+   * @returns {string} valid JSON, sized down until it fits
+   */
+  boundedPreviewJson(
+    obj,
+    arrayKey,
+    max = CreateFilesManager.MAX_SOURCE_CONTENT_LENGTH
+  ) {
+    const clone = { ...obj };
+    if (Array.isArray(clone[arrayKey]))
+      clone[arrayKey] = clone[arrayKey].slice();
+
+    let serialized = JSON.stringify(clone);
+    if (serialized.length <= max) return serialized;
+
+    // Trim trailing items (keep newest context first) until it fits.
+    if (Array.isArray(clone[arrayKey])) {
+      while (clone[arrayKey].length > 1) {
+        clone[arrayKey].pop();
+        serialized = JSON.stringify(clone);
+        if (serialized.length <= max) return serialized;
+      }
+    }
+
+    // A single oversized item remains: truncate its long string fields so the
+    // JSON stays valid and still carries the leading content.
+    const shrink = (item) => {
+      if (!item || typeof item !== "object") return;
+      for (const key of Object.keys(item)) {
+        const val = item[key];
+        if (typeof val === "string" && val.length > 4_000)
+          item[key] = val.slice(0, 4_000);
+        else if (Array.isArray(val)) val.forEach(shrink);
+      }
+    };
+    if (Array.isArray(clone[arrayKey])) clone[arrayKey].forEach(shrink);
+    shrink(clone);
+    serialized = JSON.stringify(clone);
+    if (serialized.length <= max) return serialized;
+
+    // Absolute last resort: empty the list so the wrapper is always parseable.
+    if (Array.isArray(clone[arrayKey])) {
+      clone[arrayKey] = [];
+      serialized = JSON.stringify(clone);
+    }
+    return serialized;
   }
 
   /**

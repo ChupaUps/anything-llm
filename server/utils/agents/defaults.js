@@ -20,7 +20,18 @@ const SINGLE_USER_ONLY_SKILLS = new Set(["create-scheduled-job"]);
 // Skills that are configured per workspace and can never be enabled instance
 // wide. The sql-agent is one of them: it only reads the databases its workspace
 // owner connected, so it is attached by `sqlSkillIfAvailable` below.
-const WORKSPACE_SCOPED_SKILLS = new Set(["sql-agent"]);
+// `personal-integrations` follows the same rule and reads the mail / calendar
+// accounts of a single workspace. `gmail-agent` / `outlook-agent` /
+// `google-calendar-agent` used to be global OAuth connections; they are pinned
+// here so their single-user-only flows never leak into multi-user instances -
+// the per-workspace integrations tab replaces them.
+const WORKSPACE_SCOPED_SKILLS = new Set([
+  "sql-agent",
+  "personal-integrations",
+  "gmail-agent",
+  "outlook-agent",
+  "google-calendar-agent",
+]);
 
 /**
  * Configuration for agent skills that require availability checks and disabled sub-skill lists.
@@ -58,6 +69,30 @@ const SKILL_FILTER_CONFIG = {
     disabledSettingKey: "disabled_google_calendar_skills",
   },
 };
+
+/**
+ * Remove skills the workspace has opted out of. Admins can switch off any
+ * built-in skill per workspace (e.g. disable `web-scraping` + `web-browsing`
+ * on a RAG+SQL workspace so the agent never reaches the internet). A disabled
+ * parent also removes all of its `parent#child` sub-skills, and workspace-
+ * scoped tools (`sql-agent`, `external-data`) can be turned off even when
+ * their connectors are present.
+ * @param {string[]} functions - Combined funcsToLoad-style identifiers.
+ * @param {import("@prisma/client").workspaces | null} workspace
+ * @returns {string[]}
+ */
+function applyWorkspaceSkillFilter(functions = [], workspace = null) {
+  const { Workspace } = require("../../models/workspace");
+  const disabled = Workspace.disabledAgentSkills(workspace);
+  if (!disabled.length) return functions;
+  const blocked = new Set(disabled);
+  return functions.filter((fn) => {
+    if (blocked.has(fn)) return false;
+    const parent = fn.includes("#") ? fn.split("#")[0] : null;
+    if (parent && blocked.has(parent)) return false;
+    return true;
+  });
+}
 
 const USER_AGENT = {
   name: "USER",
@@ -101,15 +136,19 @@ const WORKSPACE_AGENT = {
 
     return {
       role,
-      functions: [
-        ...(await agentSkillsFromSystemSettings()),
-        ...clarifyingQuestionsSkills,
-        ...(await externalDataSkillIfAvailable(workspace)),
-        ...(await sqlSkillIfAvailable(workspace)),
-        ...ImportedPlugin.activeImportedPlugins(),
-        ...AgentFlows.activeFlowPlugins(),
-        ...(await new MCPCompatibilityLayer().activeMCPServers()),
-      ],
+      functions: applyWorkspaceSkillFilter(
+        [
+          ...(await agentSkillsFromSystemSettings()),
+          ...clarifyingQuestionsSkills,
+          ...(await externalDataSkillIfAvailable(workspace)),
+          ...(await sqlSkillIfAvailable(workspace)),
+          ...(await personalIntegrationsSkillIfAvailable(workspace)),
+          ...ImportedPlugin.activeImportedPlugins(),
+          ...AgentFlows.activeFlowPlugins(),
+          ...(await new MCPCompatibilityLayer().activeMCPServers()),
+        ],
+        workspace
+      ),
     };
   },
 };
@@ -147,6 +186,48 @@ async function sqlSkillIfAvailable(workspace = null) {
   const parent = AgentPlugins.sqlAgent;
   if (!Array.isArray(parent?.plugin)) return [];
   return parent.plugin.map((sub) => `${parent.name}#${sub.name}`);
+}
+
+/**
+ * The personal-integrations skill is workspace-scoped: it is only attached when
+ * the workspace owner connected at least one mail / calendar account, and only
+ * the sub-tools whose scope is granted on those rows are exposed. That keeps a
+ * "read + draft" setup from silently gaining calendar-write tools and vice
+ * versa.
+ * @param {import("@prisma/client").workspaces | null} workspace
+ * @returns {Promise<string[]>}
+ */
+async function personalIntegrationsSkillIfAvailable(workspace = null) {
+  if (!workspace?.id) return [];
+  // Instance-wide kill-switch: when the admin turns off personal integrations
+  // the agent must not see the mail / calendar tools for any workspace.
+  const featureEnabled =
+    (await SystemSettings.getValueOrFallback(
+      { label: "personal_integrations_enabled" },
+      "true"
+    )) === "true";
+  if (!featureEnabled) return [];
+  const {
+    WorkspaceIntegration,
+  } = require("../../models/workspaceIntegration");
+  const rows = await WorkspaceIntegration.enabled(workspace.id);
+  if (!rows.length) return [];
+
+  const granted = new Set();
+  for (const row of rows) {
+    for (const scope of WorkspaceIntegration.toPublic(row).scopes) granted.add(scope);
+  }
+
+  const parent = AgentPlugins.personalIntegrationsAgent;
+  if (!Array.isArray(parent?.plugin)) return [];
+  const scopeForSub = {
+    "read-email": WorkspaceIntegration.SCOPES.EMAIL_READ,
+    "create-email-draft": WorkspaceIntegration.SCOPES.EMAIL_DRAFT,
+    "create-calendar-event": WorkspaceIntegration.SCOPES.CALENDAR_CREATE,
+  };
+  return parent.plugin
+    .filter((sub) => granted.has(scopeForSub[sub.name] ?? "__none__"))
+    .map((sub) => `${parent.name}#${sub.name}`);
 }
 
 /**
@@ -318,5 +399,7 @@ module.exports = {
   agentSkillsFromSystemSettings,
   externalDataSkillIfAvailable,
   sqlSkillIfAvailable,
+  personalIntegrationsSkillIfAvailable,
   resolveAgentSkill,
+  applyWorkspaceSkillFilter,
 };

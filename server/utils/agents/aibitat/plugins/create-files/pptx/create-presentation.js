@@ -647,16 +647,27 @@ module.exports.CreatePptxPresentation = {
                 displayFilename,
               });
 
+              // Structured slide payload shared by the live card and persisted
+              // history so the in-chat preview can render slide cards. Bounded as
+              // valid JSON (drops trailing slides over budget) so a large deck can
+              // never be byte-truncated into an unparseable string.
+              const sourceContent = createFilesLib.boundedPreviewJson(
+                { title: deck.title, slides: cleanSlides },
+                "slides"
+              );
+
               this.super.socket?.send?.("fileDownloadCard", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent,
               });
 
               createFilesLib.registerOutput(this.super, "PptxFileDownload", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent,
               });
 
               this.super.introspect(
@@ -678,6 +689,7 @@ module.exports.CreatePptxPresentation = {
                 }.`,
                 chartCount > 0 ? `Included ${chartCount} native chart(s).` : "",
                 `Branding: ${deck.branding.mode}.`,
+                `A download button for this file is shown automatically in the chat UI - do NOT write any download link, URL, markdown link, or file path (e.g. /mnt/data/...) in your reply; simply tell the user the presentation is ready.`,
                 qaNotes.length > 0
                   ? `QA notes: ${qaNotes.join("; ")}`
                   : "QA notes: no issues.",

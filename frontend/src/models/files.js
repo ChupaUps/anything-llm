@@ -23,6 +23,29 @@ const StorageFiles = {
   },
 
   /**
+   * Fetch a faithful PDF preview of a generated document. The server returns the
+   * PDF directly for .pdf files and renders office documents (docx/xlsx/pptx/...)
+   * to PDF via LibreOffice. Returns null on any failure (including LibreOffice
+   * being unavailable) so the caller can fall back to the text-based preview.
+   * @param {string} storageFilename
+   * @returns {Promise<Blob|null>}
+   */
+  preview: async function (storageFilename) {
+    return await fetch(
+      `${API_BASE}/agent-skills/generated-files/preview/${encodeURIComponent(storageFilename)}`,
+      { headers: baseHeaders() }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Preview unavailable");
+        return res.blob();
+      })
+      .catch((e) => {
+        console.warn("Preview fetch failed:", e);
+        return null;
+      });
+  },
+
+  /**
    * Fetch a generated image as a Blob. The serve endpoint is auth-protected, so
    * we cannot use the URL directly as an <img> src - callers create an object URL.
    * @param {string} storageFilename - The image filename to fetch

@@ -12,7 +12,9 @@ const { WorkspaceChats } = require("../models/workspaceChats");
 const { Workspace } = require("../models/workspace");
 const { ScheduledJobRun } = require("../models/scheduledJobRun");
 const createFilesLib = require("../utils/agents/aibitat/plugins/create-files/lib");
+const documentPreview = require("../utils/documentPreview");
 const { Telemetry } = require("../models/telemetry");
+const fs = require("fs");
 
 /**
  * Endpoints for serving agent-generated files (PPTX, etc.) with authentication
@@ -20,6 +22,93 @@ const { Telemetry } = require("../models/telemetry");
  */
 function agentFileServerEndpoints(app) {
   if (!app) return;
+
+  /**
+   * Faithful in-chat document preview: returns a PDF for the requested generated
+   * file. PDFs are served as-is; office documents (docx/xlsx/pptx/...) are
+   * rendered to PDF via headless LibreOffice and cached. The client fetches this
+   * as a blob and renders it in an <iframe>.
+   *
+   * Responses:
+   *   200 application/pdf - ready to render
+   *   501 - LibreOffice unavailable; client should fall back to the text preview
+   *   415 - file type not previewable here (client falls back per type)
+   */
+  app.get(
+    "/agent-skills/generated-files/preview/:filename",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const user = await userFromSession(request, response);
+        const { filename } = request.params;
+        if (!filename)
+          return response.status(400).json({ error: "Filename is required" });
+
+        const parsed = createFilesLib.parseFilename(filename);
+        if (!parsed)
+          return response
+            .status(400)
+            .json({ error: "Invalid filename format" });
+
+        const fileSource = await findFileSource(filename, {
+          user,
+          isMultiUser: multiUserMode(response),
+        });
+        if (!fileSource)
+          return response
+            .status(404)
+            .json({ error: "File not found or access denied" });
+
+        const ext = parsed.extension.toLowerCase();
+        let pdfBuffer;
+
+        if (ext === "pdf") {
+          const fileData = await createFilesLib.getGeneratedFile(filename);
+          if (!fileData)
+            return response
+              .status(404)
+              .json({ error: "File not found in storage" });
+          pdfBuffer = fileData.buffer;
+        } else if (documentPreview.isConvertible(ext)) {
+          const pdfPath = await documentPreview.getPreviewPdf(filename);
+          pdfBuffer = await fs.promises.readFile(pdfPath);
+        } else {
+          return response
+            .status(415)
+            .json({ error: "Preview not supported for this file type" });
+        }
+
+        const safeFilename = createFilesLib.sanitizeFilenameForHeader(
+          (fileSource.displayFilename || filename).replace(/\.[^.]+$/, "") +
+            ".pdf"
+        );
+        response.setHeader("Content-Type", "application/pdf");
+        response.setHeader(
+          "Content-Disposition",
+          `inline; filename="${safeFilename}"`
+        );
+        response.setHeader("Cache-Control", "private, max-age=3600");
+        response.setHeader("Content-Length", pdfBuffer.length);
+        response.send(pdfBuffer);
+        Telemetry.sendTelemetry("agent_generated_file_previewed", {
+          type: ext,
+        }).catch(() => {});
+        return;
+      } catch (error) {
+        if (error?.code === "ENOLILOFFICE") {
+          return response.status(501).json({
+            error: "LibreOffice preview is not available on this server",
+          });
+        }
+        console.error(
+          "[agentFileServer] Preview error:",
+          error?.code || "",
+          error.message
+        );
+        return response.status(500).json({ error: "Failed to build preview" });
+      }
+    }
+  );
 
   /**
    * Download a generated file by its storage filename.

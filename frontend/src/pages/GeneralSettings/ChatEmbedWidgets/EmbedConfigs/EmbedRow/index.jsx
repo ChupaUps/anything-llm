@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DotsThreeOutline } from "@phosphor-icons/react";
 import showToast from "@/utils/toast";
 import { useModal } from "@/hooks/useModal";
@@ -12,6 +13,7 @@ import moment from "moment";
 import { safeJsonParse } from "@/utils/request";
 
 export default function EmbedRow({ embed }) {
+  const { t } = useTranslation();
   const rowRef = useRef(null);
   const [enabled, setEnabled] = useState(Number(embed.enabled) === 1);
   const {
@@ -26,12 +28,7 @@ export default function EmbedRow({ embed }) {
   } = useModal();
 
   const handleSuspend = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to disabled this embed?\nOnce disabled the embed will no longer respond to any chat requests.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("embeddable.row.disableConfirm"))) return false;
 
     const { success, error } = await Embed.updateEmbed(embed.id, {
       enabled: !enabled,
@@ -39,7 +36,9 @@ export default function EmbedRow({ embed }) {
     if (!success) showToast(error, "error", { clear: true });
     if (success) {
       showToast(
-        `Embed ${enabled ? "has been disabled" : "is active"}.`,
+        enabled
+          ? t("embeddable.row.disabledToast")
+          : t("embeddable.row.activatedToast"),
         "success",
         { clear: true }
       );
@@ -47,17 +46,12 @@ export default function EmbedRow({ embed }) {
     }
   };
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this embed?\nOnce deleted this embed will no longer respond to chats or be active.\n\nThis action is irreversible.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("embeddable.row.deleteConfirm"))) return false;
     const { success, error } = await Embed.deleteEmbed(embed.id);
     if (!success) showToast(error, "error", { clear: true });
     if (success) {
       rowRef?.current?.remove();
-      showToast("Embed deleted from system.", "success", { clear: true });
+      showToast(t("embeddable.row.deletedToast"), "success", { clear: true });
     }
   };
 
@@ -103,7 +97,7 @@ export default function EmbedRow({ embed }) {
             className="group text-xs font-medium text-theme-text-secondary px-2 py-1 rounded-lg hover:bg-theme-button-code-hover-bg"
           >
             <span className="group-hover:text-theme-button-code-hover-text">
-              Code
+              {t("embeddable.row.code")}
             </span>
           </button>
           <button
@@ -111,7 +105,9 @@ export default function EmbedRow({ embed }) {
             className="group text-xs font-medium text-theme-text-secondary px-2 py-1 rounded-lg hover:bg-theme-button-disable-hover-bg"
           >
             <span className="group-hover:text-theme-button-disable-hover-text">
-              {enabled ? "Disable" : "Enable"}
+              {enabled
+                ? t("embeddable.row.disable")
+                : t("embeddable.row.enable")}
             </span>
           </button>
           <button
@@ -119,7 +115,7 @@ export default function EmbedRow({ embed }) {
             className="group text-xs font-medium text-theme-text-secondary px-2 py-1 rounded-lg hover:bg-theme-button-delete-hover-bg"
           >
             <span className="group-hover:text-theme-button-delete-hover-text">
-              Delete
+              {t("embeddable.row.delete")}
             </span>
           </button>
           <button
@@ -141,8 +137,9 @@ export default function EmbedRow({ embed }) {
 }
 
 function ActiveDomains({ domainList }) {
+  const { t } = useTranslation();
   const domains = safeJsonParse(domainList, []);
-  if (domains.length === 0) return <p>all</p>;
+  if (domains.length === 0) return <p>{t("embeddable.row.allDomains")}</p>;
   return (
     <div className="flex flex-col gap-y-2">
       {domains.map((domain, index) => {

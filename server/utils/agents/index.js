@@ -102,23 +102,30 @@ class AgentHandler {
         )
       ).reverse();
 
-      const { chatHistoryAttachments } = require("../files");
+      const {
+        chatHistoryAttachments,
+        createdDocumentsContext,
+        sanitizeCreatedFileText,
+      } = require("../files");
       const agentHistory = [];
       rawHistory.forEach((chatLog) => {
         const response = safeJsonParse(chatLog.response, {});
         const attachments = chatHistoryAttachments(response);
+        // Re-inject any documents the agent created this turn so later requests
+        // like "fix a typo in that document" can actually see the content.
+        const documentContext = createdDocumentsContext(response?.outputs);
         agentHistory.push(
           {
             from: USER_AGENT.name,
             to: WORKSPACE_AGENT.name,
-            content: chatLog.prompt,
+            content: `${chatLog.prompt}${documentContext}`,
             state: "success",
             ...(attachments.length > 0 ? { attachments } : {}),
           },
           {
             from: WORKSPACE_AGENT.name,
             to: USER_AGENT.name,
-            content: response?.text || "",
+            content: sanitizeCreatedFileText(response?.text || ""),
             state: "success",
           }
         );

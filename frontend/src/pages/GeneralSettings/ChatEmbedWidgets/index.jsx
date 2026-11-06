@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Sidebar from "@/components/SettingsSidebar";
 import { isMobile } from "react-device-detect";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
@@ -6,6 +7,7 @@ import EmbedConfigsView from "./EmbedConfigs";
 import EmbedChatsView from "./EmbedChats";
 
 export default function ChatEmbedWidgets() {
+  const { t } = useTranslation();
   const [selectedView, setSelectedView] = useState("configs");
   const [showViewModal, setShowViewModal] = useState(false);
 
@@ -18,7 +20,9 @@ export default function ChatEmbedWidgets() {
             className="flex flex-col gap-y-[18px] overflow-y-scroll no-scroll"
           >
             <div className="text-theme-text-primary flex items-center gap-x-2">
-              <p className="text-lg font-medium">Chat Embed</p>
+              <p className="text-lg font-medium">
+                {t("embeddable.page.title")}
+              </p>
             </div>
             <WidgetList
               selectedView={selectedView}
@@ -42,7 +46,7 @@ export default function ChatEmbedWidgets() {
                   >
                     <div className="flex items-center text-sky-400">
                       <CaretLeft size={24} />
-                      <div>Back</div>
+                      <div>{t("embeddable.page.back")}</div>
                     </div>
                   </button>
                 </div>
@@ -69,7 +73,9 @@ export default function ChatEmbedWidgets() {
         <div className="flex flex-col min-w-[360px] h-[calc(100vh-90px)]">
           <div className="flex-none mb-4">
             <div className="text-theme-text-primary flex items-center gap-x-2">
-              <p className="text-lg font-medium">Chat Embed</p>
+              <p className="text-lg font-medium">
+                {t("embeddable.page.title")}
+              </p>
             </div>
           </div>
 
@@ -114,12 +120,13 @@ function WidgetLayout({ children }) {
 }
 
 function WidgetList({ selectedView, handleClick }) {
+  const { t } = useTranslation();
   const views = {
     configs: {
-      title: "Widgets",
+      title: t("embeddable.page.viewWidgets"),
     },
     chats: {
-      title: "History",
+      title: t("embeddable.page.viewHistory"),
     },
   };
 

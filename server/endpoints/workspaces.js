@@ -755,6 +755,66 @@ function workspaceEndpoints(app) {
     }
   );
 
+  // Per-workspace agent skill overrides. Admins and managers can switch off
+  // any built-in skill (e.g. web-scraping / web-browsing) so a RAG+SQL
+  // workspace never hits the internet. Empty list = inherit admin defaults.
+  app.get(
+    "/workspace/:slug/agent-skills",
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      validWorkspaceSlug,
+    ],
+    async (_request, response) => {
+      try {
+        const workspace = response.locals.workspace;
+        response.status(200).json({
+          success: true,
+          disabledSkills: Workspace.disabledAgentSkills(workspace),
+        });
+      } catch (error) {
+        console.error("Error fetching workspace agent skills:", error);
+        response.status(500).json({ success: false, disabledSkills: [] });
+      }
+    }
+  );
+
+  app.post(
+    "/workspace/:slug/agent-skills",
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      validWorkspaceSlug,
+    ],
+    async (request, response) => {
+      try {
+        const workspace = response.locals.workspace;
+        const { disabledSkills = [] } = reqBody(request);
+        if (!Array.isArray(disabledSkills)) {
+          return response.status(400).json({
+            success: false,
+            message: "disabledSkills must be an array of skill keys.",
+          });
+        }
+
+        const { workspace: updated, message } =
+          await Workspace.setDisabledAgentSkills(workspace.id, disabledSkills);
+        if (!updated)
+          return response
+            .status(500)
+            .json({ success: false, message: message || "Update failed" });
+
+        response.status(200).json({
+          success: true,
+          disabledSkills: Workspace.disabledAgentSkills(updated),
+        });
+      } catch (error) {
+        console.error("Error saving workspace agent skills:", error);
+        response.status(500).json({ success: false });
+      }
+    }
+  );
+
   app.post(
     "/workspace/:slug/update-pin",
     [

@@ -42,6 +42,7 @@ const IGNORE_CHANGE_SETTINGS = [
   "agentSkillMaxToolCalls",
   "agentClarifyingQuestionsEnabled",
   "agentClarifyingQuestionsMaxPerTurn",
+  "personalIntegrationsEnabled",
 ];
 
 export default function AdminAgents() {

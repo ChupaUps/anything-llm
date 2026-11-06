@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Workspace from "@/models/workspace";
 import { TagsInput } from "react-tag-input-component";
 import Embed from "@/models/embed";
@@ -34,6 +35,7 @@ export function enforceSubmissionSchema(form) {
 }
 
 export default function NewEmbedModal({ closeModal }) {
+  const { t } = useTranslation();
   const [error, setError] = useState(null);
 
   const handleCreate = async (e) => {
@@ -49,7 +51,7 @@ export default function NewEmbedModal({ closeModal }) {
   return (
     <form onSubmit={handleCreate} className="flex flex-col gap-y-5">
       <ModalHeader
-        title="Create new embed for workspace"
+        title={t("embeddable.modal.createTitle")}
         onClose={closeModal}
       />
       <ModalBody>
@@ -58,57 +60,63 @@ export default function NewEmbedModal({ closeModal }) {
         <PermittedDomains />
         <NumberInput
           name="max_chats_per_day"
-          title="Max chats per day"
-          hint="Limit the amount of chats this embedded chat can process in a 24 hour period. Zero is unlimited."
+          title={t("embeddable.modal.maxChatsDayTitle")}
+          hint={t("embeddable.modal.maxChatsDayHint")}
         />
         <NumberInput
           name="max_chats_per_session"
-          title="Max chats per session"
-          hint="Limit the amount of chats a session user can send with this embed in a 24 hour period. Zero is unlimited."
+          title={t("embeddable.modal.maxChatsSessionTitle")}
+          hint={t("embeddable.modal.maxChatsSessionHint")}
         />
         <NumberInput
           name="message_limit"
-          title="Message History Limit"
-          hint="The number of previous messages to include in the chat context. Default is 20."
+          title={t("embeddable.modal.messageLimitTitle")}
+          hint={t("embeddable.modal.messageLimitHint")}
           defaultValue={20}
         />
         <BooleanInput
           name="allow_model_override"
-          title="Enable dynamic model use"
-          hint="Allow setting of the preferred LLM model to override the workspace default."
+          title={t("embeddable.modal.allowModelTitle")}
+          hint={t("embeddable.modal.allowModelHint")}
         />
         <BooleanInput
           name="allow_temperature_override"
-          title="Enable dynamic LLM temperature"
-          hint="Allow setting of the LLM temperature to override the workspace default."
+          title={t("embeddable.modal.allowTemperatureTitle")}
+          hint={t("embeddable.modal.allowTemperatureHint")}
         />
         <BooleanInput
           name="allow_prompt_override"
-          title="Enable Prompt Override"
-          hint="Allow setting of the system prompt to override the workspace default."
+          title={t("embeddable.modal.allowPromptTitle")}
+          hint={t("embeddable.modal.allowPromptHint")}
         />
 
-        {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+        {error && (
+          <p className="text-red-400 text-sm">
+            {t("embeddable.modal.error", { message: error })}
+          </p>
+        )}
         <p className="text-xs text-zinc-400 light:text-slate-600">
-          After creating an embed you will be provided a link that you can
-          publish on your website with a simple
+          {t("embeddable.modal.noteStart")}
           <code className="light:bg-stone-300 bg-stone-900 text-white mx-1 px-1 rounded-sm">
             &lt;script&gt;
           </code>{" "}
-          tag.
+          {t("embeddable.modal.noteEnd")}
         </p>
       </ModalBody>
       <ModalFooter>
         <ModalSecondaryButton onClick={closeModal} type="button">
-          Cancel
+          {t("embeddable.modal.cancel")}
         </ModalSecondaryButton>
-        <ModalPrimaryButton type="submit">Create embed</ModalPrimaryButton>
+        <ModalPrimaryButton type="submit">
+          {t("embeddable.modal.createCta")}
+        </ModalPrimaryButton>
       </ModalFooter>
     </form>
   );
 }
 
 export const WorkspaceSelection = ({ defaultValue = null }) => {
+  const { t } = useTranslation();
   const [workspaces, setWorkspaces] = useState([]);
   useEffect(() => {
     async function fetchWorkspaces() {
@@ -121,11 +129,10 @@ export const WorkspaceSelection = ({ defaultValue = null }) => {
   return (
     <div>
       <div className="flex flex-col mb-2">
-        <ModalLabel htmlFor="workspace_id">Workspace</ModalLabel>
-        <ModalHint>
-          This is the workspace your chat window will be based on. All defaults
-          will be inherited from the workspace unless overridden by this config.
-        </ModalHint>
+        <ModalLabel htmlFor="workspace_id">
+          {t("embeddable.modal.workspaceTitle")}
+        </ModalLabel>
+        <ModalHint>{t("embeddable.modal.workspaceHint")}</ModalHint>
       </div>
       <select
         name="workspace_id"
@@ -150,21 +157,48 @@ export const WorkspaceSelection = ({ defaultValue = null }) => {
 };
 
 export const ChatModeSelection = ({ defaultValue = null }) => {
+  const { t } = useTranslation();
   const [chatMode, setChatMode] = useState(defaultValue ?? "query");
 
   return (
     <div>
       <div className="flex flex-col mb-2">
-        <ModalLabel htmlFor="chat_mode">Allowed chat method</ModalLabel>
+        <ModalLabel htmlFor="chat_mode">
+          {t("embeddable.modal.chatModeTitle")}
+        </ModalLabel>
         <ModalHint>
-          Set how your chatbot should operate. Query means it will only respond
-          if a document helps answer the query.
+          {t("embeddable.modal.chatModeHint1")}
           <br />
-          Chat opens the chat to even general questions and can answer totally
-          unrelated queries to your workspace.
+          {t("embeddable.modal.chatModeHint2")}
+          <br />
+          {t("embeddable.modal.chatModeHint3")}
         </ModalHint>
       </div>
       <div className="mt-2 gap-y-3 flex flex-col">
+        <label
+          className={`transition-all duration-300 w-full h-11 p-2.5 rounded-lg flex justify-start items-center gap-2.5 cursor-pointer border ${
+            chatMode === "automatic"
+              ? "border-sky-500 bg-zinc-800 light:bg-slate-100"
+              : "border-zinc-800 light:border-slate-300 hover:bg-zinc-800 light:hover:bg-slate-100"
+          } `}
+        >
+          <input
+            type="radio"
+            name="chat_mode"
+            value={"automatic"}
+            checked={chatMode === "automatic"}
+            onChange={(e) => setChatMode(e.target.value)}
+            className="hidden"
+          />
+          <div
+            className={`w-4 h-4 rounded-full border-2 border-zinc-700 light:border-slate-400 mr-2 ${
+              chatMode === "automatic" ? "bg-sky-500" : ""
+            }`}
+          ></div>
+          <div className="text-zinc-100 light:text-slate-900 text-sm font-medium font-['Plus Jakarta Sans'] leading-tight">
+            {t("embeddable.modal.chatModeAgent")}
+          </div>
+        </label>
         <label
           className={`transition-all duration-300 w-full h-11 p-2.5 rounded-lg flex justify-start items-center gap-2.5 cursor-pointer border ${
             chatMode === "chat"
@@ -186,7 +220,7 @@ export const ChatModeSelection = ({ defaultValue = null }) => {
             }`}
           ></div>
           <div className="text-zinc-100 light:text-slate-900 text-sm font-medium font-['Plus Jakarta Sans'] leading-tight">
-            Chat: Respond to all questions regardless of context
+            {t("embeddable.modal.chatModeChat")}
           </div>
         </label>
         <label
@@ -210,7 +244,7 @@ export const ChatModeSelection = ({ defaultValue = null }) => {
             }`}
           ></div>
           <div className="text-zinc-100 light:text-slate-900 text-sm font-medium font-['Plus Jakarta Sans'] leading-tight">
-            Query: Only respond to chats related to documents in workspace
+            {t("embeddable.modal.chatModeQuery")}
           </div>
         </label>
       </div>
@@ -219,6 +253,7 @@ export const ChatModeSelection = ({ defaultValue = null }) => {
 };
 
 export const PermittedDomains = ({ defaultValue = [] }) => {
+  const { t } = useTranslation();
   const [domains, setDomains] = useState(defaultValue);
   const handleChange = (data) => {
     const validDomains = data
@@ -260,13 +295,12 @@ export const PermittedDomains = ({ defaultValue = [] }) => {
     <div>
       <div className="flex flex-col mb-2">
         <ModalLabel htmlFor="allowlist_domains">
-          Restrict requests from domains
+          {t("embeddable.modal.domainsTitle")}
         </ModalLabel>
         <ModalHint>
-          This filter will block any requests that come from a domain other than
-          the list below.
+          {t("embeddable.modal.domainsHint")}
           <br />
-          Leaving this empty means anyone can use your embed on any site.
+          {t("embeddable.modal.domainsHint2")}
         </ModalHint>
       </div>
       <input type="hidden" name="allowlist_domains" value={domains.join(",")} />
@@ -274,7 +308,7 @@ export const PermittedDomains = ({ defaultValue = [] }) => {
         value={domains}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="https://mysite.com, https://interstorm.ru"
+        placeholder={t("embeddable.modal.domainsPlaceholder")}
         classNames={{
           tag: "!bg-zinc-700 light:!bg-slate-200 !text-zinc-100 light:!text-slate-800",
           input:

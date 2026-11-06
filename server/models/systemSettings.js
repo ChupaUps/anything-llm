@@ -67,6 +67,7 @@ const SystemSettings = {
     "imported_agent_skills",
     "agent_clarifying_questions_enabled",
     "agent_clarifying_questions_max_per_turn",
+    "personal_integrations_enabled",
     "custom_app_name",
     "feature_flags",
     "meta_page_title",
@@ -99,6 +100,7 @@ const SystemSettings = {
     "agent_sql_connections",
     "agent_clarifying_questions_enabled",
     "agent_clarifying_questions_max_per_turn",
+    "personal_integrations_enabled",
     "custom_app_name",
     "default_system_prompt",
 
@@ -120,6 +122,9 @@ const SystemSettings = {
     // Memory/Personalization
     "memory_enabled",
     "memory_auto_extraction",
+
+    // Chat model fallback (error-triggered retry on an alternate model)
+    "chat_fallback_config",
   ],
   validations: {
     theme_palettes: (update) => JSON.stringify(sanitizeThemePalettes(update)),
@@ -490,6 +495,10 @@ const SystemSettings = {
       if (typeof update === "boolean") return update ? "true" : "false";
       return String(update) === "true" ? "true" : "false";
     },
+    personal_integrations_enabled: (update) => {
+      if (typeof update === "boolean") return update ? "true" : "false";
+      return String(update) === "true" ? "true" : "false";
+    },
     agent_clarifying_questions_max_per_turn: (update) => {
       const n = Number(update);
       if (!Number.isFinite(n) || n < 1) return 3;
@@ -733,6 +742,14 @@ const SystemSettings = {
           "3"
         )) || 3
       ),
+      // Instance-wide master switch for the per-workspace personal-integrations
+      // tab (mail / calendar). Defaults to enabled so existing setups keep
+      // working; an admin can turn it off to hide the tab for everyone.
+      PersonalIntegrationsEnabled:
+        (await this.getValueOrFallback(
+          { label: "personal_integrations_enabled" },
+          "true"
+        )) === "true",
     };
   },
 

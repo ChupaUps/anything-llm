@@ -1,16 +1,23 @@
 import { memo, useState } from "react";
 import { saveAs } from "file-saver";
-import { DownloadSimple, CircleNotch } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
+import { DownloadSimple, Eye, CircleNotch } from "@phosphor-icons/react";
 import { humanFileSize } from "@/utils/numbers";
 import StorageFiles from "@/models/files";
+import { getFileMeta, isPreviewable } from "./fileMeta";
+import DocumentPreview from "./DocumentPreview";
 
 /**
- * @param {{content: {filename: string, storageFilename?: string, fileSize?: number}}} props
+ * @param {{content: {filename: string, storageFilename?: string, fileSize?: number, sourceContent?: string}}} props
  */
 function FileDownloadCard({ props }) {
-  const { filename, storageFilename, fileSize } = props.content || {};
-  const { badge, badgeBg, badgeText, fileType } = getFileDisplayInfo(filename);
+  const { t } = useTranslation();
+  const { filename, storageFilename, fileSize, sourceContent } =
+    props.content || {};
+  const { badge, badgeBg, badgeText, typeKey } = getFileMeta(filename);
   const [downloading, setDownloading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const canPreview = isPreviewable(filename, sourceContent);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -40,87 +47,58 @@ function FileDownloadCard({ props }) {
             </div>
             <div className="flex flex-col min-w-0">
               <p className="text-white light:text-slate-900 text-sm font-medium truncate leading-snug">
-                {filename || "Unknown file"}
+                {filename || t("chatPreview.types.generic")}
               </p>
               <p className="text-zinc-400 light:text-slate-500 text-xs leading-snug">
                 {humanFileSize(fileSize, true, 1)}
-                {fileSize && fileType ? " · " : ""}
-                {fileType}
+                {fileSize ? " · " : ""}
+                {t(`chatPreview.types.${typeKey}`)}
               </p>
             </div>
           </div>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-x-2 px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium flex-shrink-0 ml-4 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {downloading ? (
-              <CircleNotch size={16} weight="bold" className="animate-spin" />
-            ) : (
-              <DownloadSimple size={16} weight="bold" />
+
+          <div className="flex items-center gap-x-2 flex-shrink-0 ml-4">
+            {canPreview && (
+              <button
+                onClick={() => setPreviewOpen(true)}
+                className="flex items-center gap-x-2 px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium"
+              >
+                <Eye size={16} weight="bold" />
+                <span>{t("chatPreview.preview")}</span>
+              </button>
             )}
-            <span>{downloading ? "Downloading..." : "Download"}</span>
-          </button>
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex items-center gap-x-2 px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {downloading ? (
+                <CircleNotch size={16} weight="bold" className="animate-spin" />
+              ) : (
+                <DownloadSimple size={16} weight="bold" />
+              )}
+              <span>
+                {downloading
+                  ? t("chatPreview.downloading")
+                  : t("chatPreview.download")}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {canPreview && (
+        <DocumentPreview
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          filename={filename}
+          storageFilename={storageFilename}
+          fileSize={fileSize}
+          sourceContent={sourceContent}
+        />
+      )}
     </div>
   );
-}
-
-/**
- * Get display info for a file based on its extension
- * @param {string} filename
- * @returns {{badge: string, badgeBg: string, badgeText: string, fileType: string}}
- */
-function getFileDisplayInfo(filename) {
-  const extension = filename?.split(".")?.pop()?.toLowerCase() ?? "txt";
-  switch (extension) {
-    case "pptx":
-    case "ppt":
-      return {
-        badge: "PPT",
-        badgeBg: "bg-orange-100",
-        badgeText: "text-orange-700",
-        fileType: "PowerPoint",
-      };
-    case "pdf":
-      return {
-        badge: "PDF",
-        badgeBg: "bg-red-100",
-        badgeText: "text-red-700",
-        fileType: "PDF Document",
-      };
-    case "doc":
-    case "docx":
-      return {
-        badge: "DOC",
-        badgeBg: "bg-blue-100",
-        badgeText: "text-blue-700",
-        fileType: "Word Document",
-      };
-    case "xls":
-    case "xlsx":
-      return {
-        badge: "XLS",
-        badgeBg: "bg-green-100",
-        badgeText: "text-green-700",
-        fileType: "Spreadsheet",
-      };
-    case "csv":
-      return {
-        badge: "CSV",
-        badgeBg: "bg-green-100",
-        badgeText: "text-green-700",
-        fileType: "Spreadsheet",
-      };
-    default:
-      return {
-        badge: extension.toUpperCase().slice(0, 4),
-        badgeBg: "bg-slate-200",
-        badgeText: "text-slate-700",
-        fileType: "File",
-      };
-  }
 }
 
 export default memo(FileDownloadCard);

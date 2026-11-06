@@ -61,6 +61,9 @@ const { mobileEndpoints } = require("./endpoints/mobile");
 const { webPushEndpoints } = require("./endpoints/webPush");
 const { telegramEndpoints } = require("./endpoints/telegram");
 const { scheduledJobEndpoints } = require("./endpoints/scheduledJobs");
+const { errorNotificationEndpoints } = require("./endpoints/errorNotifications");
+const { chatFallbackEndpoints } = require("./endpoints/chatFallback");
+const { errorAlertService } = require("./utils/ErrorAlertManager");
 const {
   outlookAgentEndpoints,
 } = require("./endpoints/utils/outlookAgentUtils");
@@ -74,6 +77,9 @@ const {
 const {
   workspaceSQLConnectorEndpoints,
 } = require("./endpoints/workspaceSQLConnectors");
+const {
+  workspaceIntegrationEndpoints,
+} = require("./endpoints/workspaceIntegrations");
 const { httpLogger } = require("./middleware/httpLogger");
 const app = express();
 const apiRouter = express.Router();
@@ -116,6 +122,26 @@ app.use((err, request, response, next) => {
   next();
 });
 
+// Operational error alerts: watch every response as it finishes and notify the
+// admin (email and/or Telegram) when a request ends in a 5xx. Skipped for the
+// alert-config endpoints themselves so a failing "test" never spawns a cascade.
+app.use((request, response, next) => {
+  response.on("finish", () => {
+    if (response.statusCode < 500) return;
+    if (request.originalUrl?.includes("/error-notifications")) return;
+    errorAlertService.notify(
+      `HTTP ${response.statusCode} on ${request.method} ${request.originalUrl}`,
+      {
+        source: "http",
+        method: request.method,
+        path: request.originalUrl,
+        status: response.statusCode,
+      }
+    );
+  });
+  next();
+});
+
 if (!!process.env.ENABLE_HTTPS) {
   settingsHydrated.then(() => bootSSL(app, process.env.SERVER_PORT || 3001));
 } else {
@@ -147,11 +173,14 @@ mobileEndpoints(apiRouter);
 webPushEndpoints(apiRouter);
 telegramEndpoints(apiRouter);
 scheduledJobEndpoints(apiRouter);
+errorNotificationEndpoints(apiRouter);
+chatFallbackEndpoints(apiRouter);
 outlookAgentEndpoints(apiRouter);
 googleAgentSkillEndpoints(apiRouter);
 memoryEndpoints(apiRouter);
 workspaceDataConnectorEndpoints(apiRouter);
 workspaceSQLConnectorEndpoints(apiRouter);
+workspaceIntegrationEndpoints(apiRouter);
 // Externally facing embedder endpoints
 embeddedEndpoints(apiRouter);
 
@@ -232,6 +261,43 @@ if (process.env.NODE_ENV !== "development") {
 
 app.all("*", function (_, response) {
   response.sendStatus(404);
+});
+
+// Operational error alerts for process-level crashes. notify() never throws, so
+// these handlers only ever surface the error to the admin. For a fatal
+// uncaughtException the admin can additionally opt into "alert then exit" so the
+// orchestrator restarts a clean instance instead of staying up in a broken
+// state. Sending is time-boxed so a hung SMTP/Telegram call can't wedge the exit.
+const ALERT_FLUSH_TIMEOUT_MS = 8_000;
+
+async function flushAlert(error, detail) {
+  await Promise.race([
+    errorAlertService
+      .notify(error, { source: "process", detail })
+      .catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, ALERT_FLUSH_TIMEOUT_MS)),
+  ]);
+}
+
+process.on("unhandledRejection", async (reason) => {
+  await flushAlert(reason, "unhandledRejection");
+});
+process.on("uncaughtException", async (error) => {
+  console.error(error?.stack || error);
+  await flushAlert(error, "uncaughtException");
+
+  try {
+    const { ErrorNotifications } = require("./models/errorNotifications");
+    const config = await ErrorNotifications.resolve();
+    if (config.capture?.exitOnFatal) {
+      console.error(
+        "\x1b[31m[ErrorAlerts]\x1b[0m Fatal crash — exiting process for restart."
+      );
+      process.exit(1);
+    }
+  } catch {
+    // If we can't read the config, stay conservative and do not exit.
+  }
 });
 
 // In non-https mode we need to boot at the end since the server has not yet

@@ -9,8 +9,10 @@ import {
   ArrowUUpLeft,
   ChatText,
   Database,
+  EnvelopeSimple,
   HardDrives,
   PlugsConnected,
+  PuzzlePiece,
   Robot,
   User,
   Wrench,
@@ -24,8 +26,10 @@ import ChatSettings from "./ChatSettings";
 import VectorDatabase from "./VectorDatabase";
 import Members from "./Members";
 import WorkspaceAgentConfiguration from "./AgentConfig";
+import WorkspaceAgentSkills from "./WorkspaceAgentSkills";
 import DataConnectors from "./DataConnectors";
 import SQLConnectors from "./SQLConnectors";
+import Integrations from "./Integrations";
 import useUser from "@/hooks/useUser";
 import { useTranslation } from "react-i18next";
 import System from "@/models/system";
@@ -36,14 +40,16 @@ const TABS = {
   "vector-database": VectorDatabase,
   members: Members,
   "agent-config": WorkspaceAgentConfiguration,
+  "agent-skills": WorkspaceAgentSkills,
   "data-connectors": DataConnectors,
   "sql-connectors": SQLConnectors,
+  integrations: Integrations,
 };
 
-// Members (`default` role) own their personal workspace and only manage its
-// external data connections and databases - the remaining tabs stay for admins
+// Members (`default` role) own their personal workspace and manage its external
+// data / SQL / mail-calendar integrations - the remaining tabs stay for admins
 // and managers.
-const MEMBER_TABS = ["data-connectors", "sql-connectors"];
+const MEMBER_TABS = ["data-connectors", "sql-connectors", "integrations"];
 
 export default function WorkspaceSettings() {
   const { loading, requiresAuth, mode } = usePasswordModal();
@@ -62,6 +68,7 @@ function ShowWorkspaceChat() {
   const { user } = useUser();
   const [workspace, setWorkspace] = useState(null);
   const [deletionProtected, setDeletionProtected] = useState(false);
+  const [integrationsEnabled, setIntegrationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,6 +88,8 @@ function ShowWorkspaceChat() {
         suggestedMessages,
       });
       setDeletionProtected(_settings?.WorkspaceDeletionProtection === true);
+      // Instance-wide kill-switch set on the admin Agents page.
+      setIntegrationsEnabled(_settings?.PersonalIntegrationsEnabled !== false);
       setLoading(false);
     }
     getWorkspace();
@@ -94,8 +103,14 @@ function ShowWorkspaceChat() {
     : paths.workspace.settings.generalAppearance(slug);
   const TabContent = TABS[tab];
   // A member can never land on a tab that is reserved for the workspace owner
-  // or an admin, so they are sent straight to the API connections page.
-  if (!TabContent || (isMember && !MEMBER_TABS.includes(tab)))
+  // or an admin, so they are sent straight to the API connections page. When
+  // the admin has disabled integrations instance-wide, that tab is unreachable
+  // for everyone (members and admins alike).
+  if (
+    !TabContent ||
+    (isMember && !MEMBER_TABS.includes(tab)) ||
+    (tab === "integrations" && !integrationsEnabled)
+  )
     return <Navigate to={fallbackPath} replace />;
 
   return (
@@ -146,6 +161,12 @@ function ShowWorkspaceChat() {
             visible={!isMember}
           />
           <TabItem
+            title={t("workspaces—settings.agentSkills")}
+            icon={<PuzzlePiece className="h-6 w-6" />}
+            to={paths.workspace.settings.agentSkills(slug)}
+            visible={!isMember}
+          />
+          <TabItem
             title={t("workspaces—settings.dataConnectors")}
             icon={<PlugsConnected className="h-6 w-6" />}
             to={paths.workspace.settings.dataConnectors(slug)}
@@ -154,6 +175,12 @@ function ShowWorkspaceChat() {
             title={t("workspaces—settings.sqlConnectors")}
             icon={<HardDrives className="h-6 w-6" />}
             to={paths.workspace.settings.sqlConnectors(slug)}
+          />
+          <TabItem
+            title={t("workspaces—settings.integrations")}
+            icon={<EnvelopeSimple className="h-6 w-6" />}
+            to={paths.workspace.settings.integrations(slug)}
+            visible={integrationsEnabled}
           />
         </div>
         <div className="px-16 py-6">

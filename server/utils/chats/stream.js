@@ -19,6 +19,11 @@ const {
   resolveReasoningEffort,
   usesModelRouter,
 } = require("../helpers/reasoningEffort");
+const {
+  resolveChatFallback,
+  buildFallbackConnector,
+  isRetryableModelError,
+} = require("../helpers/chatModelFallback");
 
 const VALID_CHAT_MODE = ["automatic", "chat", "query"];
 
@@ -296,47 +301,122 @@ async function streamChatWithWorkspace(
     sessionReasoningEffort
   );
 
-  // If streaming is not explicitly enabled for connector
-  // we do regular waiting of a response and send a single chunk.
-  if (LLMConnector.streamingEnabled() !== true) {
-    console.log(
-      `\x1b[31m[STREAMING DISABLED]\x1b[0m Streaming is not available for ${LLMConnector.constructor.name}. Will use regular chat method.`
-    );
-    const { textResponse, metrics: performanceMetrics } =
-      await LLMConnector.getChatCompletion(messages, {
-        user: user,
-        reasoningEffort,
-      });
+  // Shared prompt inputs so the fallback connector can re-compress against its
+  // own token window if the primary model errors out.
+  const promptArgs = {
+    systemPrompt,
+    userPrompt: updatedMessage,
+    contextTexts,
+    chatHistory,
+    attachments,
+  };
 
-    completeText = textResponse;
-    metrics = addChatCostToMetrics(performanceMetrics, {
-      routingMetadata,
-      workspace,
-      connector: LLMConnector,
-    });
-    writeResponseChunk(response, {
-      uuid,
-      sources,
-      type: "textResponseChunk",
-      textResponse: completeText,
-      close: true,
-      error: false,
-      metrics,
-    });
-  } else {
-    const stream = await LLMConnector.streamGetChatCompletion(messages, {
+  // Runs the actual inference on a connector and returns the finished text +
+  // priced metrics. Non-streaming results are returned unwritten so the caller
+  // can emit exactly once even after a fallback retry; streaming results emit
+  // their own chunks (retry is only possible before the first token, since the
+  // request-creating call throws first).
+  async function runInference(connector, msgs, effort, routeMeta) {
+    if (connector.streamingEnabled() !== true) {
+      console.log(
+        `\x1b[31m[STREAMING DISABLED]\x1b[0m Streaming is not available for ${connector.constructor.name}. Will use regular chat method.`
+      );
+      const { textResponse, metrics: performanceMetrics } =
+        await connector.getChatCompletion(msgs, {
+          user: user,
+          reasoningEffort: effort,
+        });
+      return {
+        streamed: false,
+        completeText: textResponse,
+        metrics: addChatCostToMetrics(performanceMetrics, {
+          routingMetadata: routeMeta,
+          workspace,
+          connector,
+        }),
+      };
+    }
+    const stream = await connector.streamGetChatCompletion(msgs, {
       user: user,
-      reasoningEffort,
+      reasoningEffort: effort,
     });
-    completeText = await LLMConnector.handleStream(response, stream, {
+    const text = await connector.handleStream(response, stream, {
       uuid,
       sources,
     });
-    metrics = addChatCostToMetrics(stream.metrics, {
-      routingMetadata,
-      workspace,
-      connector: LLMConnector,
-    });
+    return {
+      streamed: true,
+      completeText: text,
+      metrics: addChatCostToMetrics(stream.metrics, {
+        routingMetadata: routeMeta,
+        workspace,
+        connector,
+      }),
+    };
+  }
+
+  try {
+    const result = await runInference(
+      LLMConnector,
+      messages,
+      reasoningEffort,
+      routingMetadata
+    );
+    completeText = result.completeText;
+    metrics = result.metrics;
+    if (!result.streamed)
+      writeResponseChunk(response, {
+        uuid,
+        sources,
+        type: "textResponseChunk",
+        textResponse: completeText,
+        close: true,
+        error: false,
+        metrics,
+      });
+  } catch (inferenceError) {
+    // Transparent model fallback: if a global alternate model is configured and
+    // this looks like a transient provider failure (429/5xx/network), retry on
+    // it so the user still gets an answer instead of an error.
+    const fallbackConnector = buildFallbackConnector(
+      await resolveChatFallback(),
+      workspace?.openAiTemp
+    );
+    if (!fallbackConnector || !isRetryableModelError(inferenceError))
+      throw inferenceError;
+
+    console.warn(
+      `\x1b[33m[ChatFallback]\x1b[0m Primary model failed (${inferenceError.message}); retrying on fallback ${fallbackConnector.constructor.name}.`
+    );
+
+    const fallbackMessages = await fallbackConnector.compressMessages(
+      promptArgs,
+      rawHistory
+    );
+    const fallbackEffort = await resolveReasoningEffort(
+      fallbackConnector,
+      sessionReasoningEffort
+    );
+    abortConnectorOnClientDisconnect(response, fallbackConnector);
+
+    const result = await runInference(
+      fallbackConnector,
+      fallbackMessages,
+      fallbackEffort,
+      null
+    );
+    completeText = result.completeText;
+    metrics = result.metrics;
+    if (!result.streamed)
+      writeResponseChunk(response, {
+        uuid,
+        sources,
+        type: "textResponseChunk",
+        textResponse: completeText,
+        close: true,
+        error: false,
+        metrics,
+      });
   }
 
   // Token usage is recorded before persistence so a failed chat write still

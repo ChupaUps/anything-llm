@@ -329,23 +329,38 @@ module.exports.CreateExcelFile = {
                 displayFilename,
               });
 
+              // Structured sheet payload so the in-chat preview can render
+              // tables reliably (shared by the live card and persisted history).
+              // Bounded as valid JSON so a big workbook is never byte-truncated.
+              const sourceContent = createFilesLib.boundedPreviewJson(
+                {
+                  sheets: sheetDefinitions.map((s) => ({
+                    name: s.name || "Sheet",
+                    csvData: s.csvData || "",
+                  })),
+                },
+                "sheets"
+              );
+
               this.super.socket.send("fileDownloadCard", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent,
               });
 
               createFilesLib.registerOutput(this.super, "ExcelFileDownload", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent,
               });
 
               this.super.introspect(
                 `${this.caller}: Successfully created Excel file "${displayFilename}"`
               );
 
-              let result = `Successfully created Excel spreadsheet "${displayFilename}" (${bufferSizeKB}KB) with ${sheetDefinitions.length} sheet(s).`;
+              let result = `Successfully created Excel spreadsheet "${displayFilename}" (${bufferSizeKB}KB) with ${sheetDefinitions.length} sheet(s). A download button for this file is shown automatically in the chat UI - do NOT write any download link, URL, markdown link, or file path (e.g. /mnt/data/...) in your reply; simply tell the user the file is ready.`;
 
               if (allWarnings.length > 0) {
                 result += `\n\nWarnings:\n${allWarnings.map((w) => `- ${w}`).join("\n")}`;

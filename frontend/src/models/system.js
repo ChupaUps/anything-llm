@@ -524,6 +524,51 @@ const System = {
         return { success: false, error: e.message };
       });
   },
+  // Assistant avatar for the chat embed widget. The upload field is named
+  // "logo" because the server reuses the shared asset-upload multer handler.
+  assistantIconUrl: function () {
+    return `${fullApiUrl()}/system/assistant-icon`;
+  },
+  hasAssistantIcon: async function () {
+    return await fetch(`${API_BASE}/system/assistant-icon/status`, {
+      method: "GET",
+      cache: "no-cache",
+    })
+      .then((res) => res.json())
+      .then((res) => !!res?.hasCustomIcon)
+      .catch((e) => {
+        console.log(e);
+        return false;
+      });
+  },
+  uploadAssistantIcon: async function (formData) {
+    return await fetch(`${API_BASE}/system/upload-assistant-icon`, {
+      method: "POST",
+      body: formData,
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error uploading assistant icon.");
+        return { success: true, error: null };
+      })
+      .catch((e) => {
+        console.log(e);
+        return { success: false, error: e.message };
+      });
+  },
+  removeAssistantIcon: async function () {
+    return await fetch(`${API_BASE}/system/remove-assistant-icon`, {
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (res.ok) return { success: true, error: null };
+        throw new Error("Error removing assistant icon!");
+      })
+      .catch((e) => {
+        console.log(e);
+        return { success: false, error: e.message };
+      });
+  },
   getApiKeys: async function () {
     return fetch(`${API_BASE}/system/api-keys`, {
       method: "GET",

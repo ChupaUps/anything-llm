@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import MaxToolCallStack from "./MaxToolCallStack";
 import AgentClarifyingQuestions from "./AgentClarifyingQuestions";
 import AgentSkillReranker from "./AgentSkillReranker";
+import PersonalIntegrationsToggle from "./PersonalIntegrationsToggle";
 
 export default function AgentSkillSettings() {
   const { isOpen, openModal, closeModal } = useModal();
@@ -35,6 +36,8 @@ function AgentSkillSettingsModal({ isOpen, closeModal }) {
         <AgentSkillReranker />
         <div className="border-b border-zinc-800 light:border-slate-200 h-[1px] w-full" />
         <AgentClarifyingQuestions />
+        <div className="border-b border-zinc-800 light:border-slate-200 h-[1px] w-full" />
+        <PersonalIntegrationsToggle />
       </div>
     </Modal>
   );

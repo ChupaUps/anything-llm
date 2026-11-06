@@ -16,6 +16,8 @@ const {
   agentSkillsFromSystemSettings,
   externalDataSkillIfAvailable,
   sqlSkillIfAvailable,
+  personalIntegrationsSkillIfAvailable,
+  applyWorkspaceSkillFilter,
 } = require("./defaults");
 const { AgentHandler } = require(".");
 const {
@@ -119,23 +121,30 @@ class EphemeralAgentHandler extends AgentHandler {
         )
       ).reverse();
 
-      const { chatHistoryAttachments } = require("../files");
+      const {
+        chatHistoryAttachments,
+        createdDocumentsContext,
+        sanitizeCreatedFileText,
+      } = require("../files");
       const agentHistory = [];
       rawHistory.forEach((chatLog) => {
         const response = safeJsonParse(chatLog.response, {});
         const attachments = chatHistoryAttachments(response);
+        // Re-inject any documents the agent created this turn so later requests
+        // like "fix a typo in that document" can actually see the content.
+        const documentContext = createdDocumentsContext(response?.outputs);
         agentHistory.push(
           {
             from: USER_AGENT.name,
             to: WORKSPACE_AGENT.name,
-            content: chatLog.prompt,
+            content: `${chatLog.prompt}${documentContext}`,
             state: "success",
             ...(attachments.length > 0 ? { attachments } : {}),
           },
           {
             from: WORKSPACE_AGENT.name,
             to: USER_AGENT.name,
-            content: response?.text || "",
+            content: sanitizeCreatedFileText(response?.text || ""),
             state: "success",
           }
         );
@@ -424,18 +433,24 @@ class EphemeralAgentHandler extends AgentHandler {
       )
     );
 
-    this.#funcsToLoad = [
-      ...(await agentSkillsFromSystemSettings()),
-      // Workspace-scoped tool for the external systems (1C, Bitrix24) the owner
-      // connected in the workspace settings.
-      ...(await externalDataSkillIfAvailable(this.#workspace)),
-      // Workspace-scoped SQL tools, attached only when the owner connected a
-      // database in the workspace settings.
-      ...(await sqlSkillIfAvailable(this.#workspace)),
-      ...ImportedPlugin.activeImportedPlugins(),
-      ...AgentFlows.activeFlowPlugins(),
-      ...(await new MCPCompatibilityLayer().activeMCPServers()),
-    ];
+    this.#funcsToLoad = applyWorkspaceSkillFilter(
+      [
+        ...(await agentSkillsFromSystemSettings()),
+        // Workspace-scoped tool for the external systems (1C, Bitrix24) the owner
+        // connected in the workspace settings.
+        ...(await externalDataSkillIfAvailable(this.#workspace)),
+        // Workspace-scoped SQL tools, attached only when the owner connected a
+        // database in the workspace settings.
+        ...(await sqlSkillIfAvailable(this.#workspace)),
+        // Per-workspace mail / calendar tools attached only when the owner
+        // connected an integration in the workspace settings.
+        ...(await personalIntegrationsSkillIfAvailable(this.#workspace)),
+        ...ImportedPlugin.activeImportedPlugins(),
+        ...AgentFlows.activeFlowPlugins(),
+        ...(await new MCPCompatibilityLayer().activeMCPServers()),
+      ],
+      this.#workspace
+    );
   }
 
   async init() {

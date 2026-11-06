@@ -4,8 +4,14 @@ import DefaultSkillPanel from "./DefaultSkillPanel";
 import FileSystemSkillPanel from "./FileSystemSkillPanel";
 import CreateFileSkillPanel from "./CreateFileSkillPanel";
 import CodeInterpreterSkillPanel from "./CodeInterpreterSkillPanel";
+// Kept imported so re-enabling a global OAuth plugin later is a one-line
+// change; the `getAppIntegrationSkills` map below intentionally returns {} now
+// that per-workspace integrations replace them.
+// eslint-disable-next-line no-unused-vars
 import GMailSkillPanel from "./GMailSkillPanel";
+// eslint-disable-next-line no-unused-vars
 import GoogleCalendarSkillPanel from "./GoogleCalendarSkillPanel";
+// eslint-disable-next-line no-unused-vars
 import OutlookSkillPanel from "./OutlookSkillPanel";
 import {
   Brain,
@@ -25,8 +31,12 @@ import GenerateChartsImage from "@/media/agents/generate-charts.png";
 import GenerateImageImage from "@/media/agents/generate-image.png";
 import GenerateSaveImages from "@/media/agents/generate-save-files.png";
 import FileSystemImage from "@/media/agents/file-system.png";
+// Icons below are only referenced when the corresponding panel is re-enabled.
+// eslint-disable-next-line no-unused-vars
 import GMailIcon from "./GMailSkillPanel/gmail.png";
+// eslint-disable-next-line no-unused-vars
 import OutlookIcon from "./OutlookSkillPanel/outlook.png";
+// eslint-disable-next-line no-unused-vars
 import GoogleCalendarIcon from "./GoogleCalendarSkillPanel/google-calendar.png";
 import ScheduledJobsImage from "@/media/agents/scheduled-jobs.png";
 
@@ -142,40 +152,13 @@ export const getConfigurableSkills = (
   },
 });
 
-export const getAppIntegrationSkills = (t) => ({
-  "gmail-agent": {
-    title: t("agent.skill.gmail.title"),
-    description: t("agent.skill.gmail.description"),
-    component: GMailSkillPanel,
-    skill: "gmail-agent",
-    Icon: ({ size }) => (
-      <img src={GMailIcon} alt="GMail" width={size} height={size} />
-    ),
-    mode: ["singleUserOnly"],
-  },
-  "google-calendar-agent": {
-    title: t("agent.skill.googleCalendar.title"),
-    description: t("agent.skill.googleCalendar.description"),
-    component: GoogleCalendarSkillPanel,
-    skill: "google-calendar-agent",
-    Icon: ({ size }) => (
-      <img
-        src={GoogleCalendarIcon}
-        alt="Google Calendar"
-        width={size}
-        height={size}
-      />
-    ),
-    mode: ["singleUserOnly"],
-  },
-  "outlook-agent": {
-    title: t("agent.skill.outlook.title"),
-    description: t("agent.skill.outlook.description"),
-    component: OutlookSkillPanel,
-    skill: "outlook-agent",
-    Icon: ({ size }) => (
-      <img src={OutlookIcon} alt="Outlook" width={size} height={size} />
-    ),
-    mode: ["singleUserOnly"],
-  },
+// Global app-integration skills were deprecated in favour of the per-workspace
+// Integrations tab (see `WorkspaceSettings/Integrations`) - the agent only ever
+// sees a user's own Gmail/Outlook/etc, never a shared instance-wide account.
+// Backend `WORKSPACE_SCOPED_SKILLS` blocks the old global OAuth plugins from
+// loading, and the panel components stay imported so a future re-enable is a
+// one-line change here.
+export const getAppIntegrationSkills = (_t) => ({
+  // Intentionally empty. Kept as a function so the callers do not have to
+  // special-case it.
 });

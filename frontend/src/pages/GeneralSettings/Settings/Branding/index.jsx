@@ -10,6 +10,7 @@ import {
 import FooterCustomization from "../components/FooterCustomization";
 import SupportEmail from "../components/SupportEmail";
 import CustomLogo from "../components/CustomLogo";
+import CustomAssistantIcon from "../components/CustomAssistantIcon";
 import { useTranslation } from "react-i18next";
 import CustomAppName from "../components/CustomAppName";
 import CustomSiteSettings from "../components/CustomSiteSettings";
@@ -22,6 +23,7 @@ const TABS = {
       <>
         <CustomAppName />
         <CustomLogo />
+        <CustomAssistantIcon />
       </>
     ),
   },
@@ -32,6 +34,7 @@ const TABS = {
       <>
         <FooterCustomization />
         <SupportEmail />
+        <SupportContacts />
       </>
     ),
   },
@@ -90,12 +93,6 @@ export default function BrandingSettings() {
           <div role="tabpanel" className="pt-2">
             <Component />
           </div>
-          <CustomAppName />
-          <CustomLogo />
-          <FooterCustomization />
-          <SupportEmail />
-          <SupportContacts />
-          <CustomSiteSettings />
         </div>
       </div>
     </div>

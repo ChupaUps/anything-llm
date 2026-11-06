@@ -271,12 +271,14 @@ module.exports.CreateDocxFile = {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: createFilesLib.clampSourceContent(content),
               });
 
               createFilesLib.registerOutput(this.super, "DocxFileDownload", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: content,
               });
 
               this.super.introspect(
@@ -292,7 +294,7 @@ module.exports.CreateDocxFile = {
               const styleDesc =
                 styleInfo.length > 0 ? ` with ${styleInfo.join(", ")}` : "";
 
-              return `Successfully created Word document "${displayFilename}" (${bufferSizeKB}KB)${styleDesc}. The document includes formatted content with tables, images, Page X of Y footer, and professional styling.`;
+              return `Successfully created Word document "${displayFilename}" (${bufferSizeKB}KB)${styleDesc}. The document includes formatted content with tables, images, Page X of Y footer, and professional styling. A download button for this file is shown automatically in the chat UI - do NOT write any download link, URL, markdown link, or file path (e.g. /mnt/data/...) in your reply; simply tell the user the document is ready.`;
             } catch (e) {
               this.super.handlerProps.log(
                 `create-docx-file error: ${e.message}`

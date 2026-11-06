@@ -1,5 +1,6 @@
 import moment from "moment";
 import truncate from "truncate";
+import { useTranslation } from "react-i18next";
 import Modal, { ModalHeader, ModalBody } from "@/components/lib/Modal";
 import { useModal } from "@/hooks/useModal";
 import paths from "@/utils/paths";
@@ -8,6 +9,7 @@ import MarkdownRenderer from "../MarkdownRenderer";
 import { safeJsonParse } from "@/utils/request";
 
 export default function ChatRow({ chat, onDelete }) {
+  const { t } = useTranslation();
   const {
     isOpen: isPromptOpen,
     openModal: openPromptModal,
@@ -25,12 +27,7 @@ export default function ChatRow({ chat, onDelete }) {
   } = useModal();
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this chat?\n\nThis action is irreversible.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("embed-chats.deleteConfirm"))) return false;
     await Embed.deleteChat(chat.id);
     onDelete(chat.id);
   };
@@ -75,7 +72,7 @@ export default function ChatRow({ chat, onDelete }) {
             className="group text-xs font-medium text-theme-text-secondary px-2 py-1 rounded-lg hover:bg-theme-button-delete-hover-bg"
           >
             <span className="group-hover:text-theme-button-delete-hover-text">
-              Delete
+              {t("embeddable.row.delete")}
             </span>
           </button>
         </td>
@@ -113,9 +110,10 @@ export default function ChatRow({ chat, onDelete }) {
 }
 
 const TextPreview = ({ text, closeModal }) => {
+  const { t } = useTranslation();
   return (
     <form className="flex flex-col gap-y-5">
-      <ModalHeader title="Viewing Text" onClose={closeModal} />
+      <ModalHeader title={t("embed-chats.viewingText")} onClose={closeModal} />
       <ModalBody>
         <div className="w-full h-[60vh] py-2 px-4 whitespace-pre-line overflow-auto rounded-lg bg-zinc-800 light:bg-white border border-zinc-800 light:border-slate-300 text-zinc-100 light:text-slate-900 text-sm">
           {text}
@@ -130,6 +128,7 @@ const ConnectionDetails = ({
   verbose = false,
   connection_information,
 }) => {
+  const { t } = useTranslation();
   const details = safeJsonParse(connection_information, {});
   if (Object.keys(details).length === 0) return null;
 
@@ -137,21 +136,21 @@ const ConnectionDetails = ({
     return (
       <>
         <p className="text-xs text-zinc-400 light:text-slate-500">
-          sessionID: {sessionId}
+          {t("embed-chats.connection.session")}: {sessionId}
         </p>
         {details.username && (
           <p className="text-xs text-zinc-400 light:text-slate-500">
-            username: {details.username}
+            {t("embed-chats.connection.username")}: {details.username}
           </p>
         )}
         {details.ip && (
           <p className="text-xs text-zinc-400 light:text-slate-500">
-            client ip address: {details.ip}
+            {t("embed-chats.connection.ip")}: {details.ip}
           </p>
         )}
         {details.host && (
           <p className="text-xs text-zinc-400 light:text-slate-500">
-            client host URL: {details.host}
+            {t("embed-chats.connection.host")}: {details.host}
           </p>
         )}
       </>

@@ -148,6 +148,11 @@ model workspaces {
   // Personal workspaces are created by `default` users and can only have
   // their RAG data managed by their owner.
   is_personal                  Boolean                        @default(false)
+  // JSON-encoded array of agent skill keys that are switched off for this
+  // workspace only (e.g. ["web-scraping", "web-browsing"] so the agent never
+  // hits the internet). Empty/NULL means every skill the admin enabled
+  // globally stays available here.
+  disabledAgentSkills          String?
   workspace_users              workspace_users[]
   documents                    workspace_documents[]
   workspace_suggested_messages workspace_suggested_messages[]
@@ -159,6 +164,7 @@ model workspaces {
   memories                     memories[]
   data_connectors              workspace_data_connectors[]
   sql_connectors               workspace_sql_connectors[]
+  integrations                 workspace_integrations[]
 
   @@index([owner_id])
 }
@@ -214,6 +220,38 @@ model workspace_sql_connectors {
 
   @@unique([workspace_id, database_id])
   @@unique([workspace_id, name])
+  @@index([workspace_id])
+}
+
+// Personal email / calendar accounts a user connects inside their own workspace
+// (Yandex, Mail.ru, later Google/Microsoft). The agent gets read-email,
+// create-email-draft and create-calendar-event tools only in the workspace that
+// owns the connection and only for the scopes the user ticked. App passwords are
+// encrypted with SIG_KEY/SIG_SALT.
+model workspace_integrations {
+  id              Int        @id @default(autoincrement())
+  workspace_id    Int
+  provider        String // yandex | mail_ru | google | microsoft
+  name            String // free-form label shown in the UI
+  account_email   String // user's address, e.g. name@yandex.ru
+  auth_user       String // IMAP/CalDAV login (usually equals account_email)
+  app_password    String // encrypted with SIG_KEY/SIG_SALT
+  imap_host       String?
+  imap_port       Int?
+  smtp_host       String?
+  smtp_port       Int?
+  caldav_url      String? // CalDAV base URL (Yandex calendar)
+  calendar_path   String? // optional path under CalDAV for a specific calendar
+  scopes          String     @default("[]") // JSON array: ["email:read", "email:draft", "calendar:create"]
+  enabled         Boolean    @default(true)
+  last_status     String?
+  last_error      String?
+  last_checked_at DateTime?
+  createdAt       DateTime   @default(now())
+  lastUpdatedAt   DateTime   @default(now())
+  workspace       workspaces @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  @@unique([workspace_id, provider, account_email])
   @@index([workspace_id])
 }
 

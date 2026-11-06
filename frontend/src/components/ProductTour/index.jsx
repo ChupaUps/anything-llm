@@ -203,7 +203,7 @@ export default function ProductTour() {
         id: "website",
         title: t("product_tour.steps.website.title"),
         description: t("product_tour.steps.website.description"),
-        anchors: ['[data-code-run]', '[data-tour="prompt-input"]'],
+        anchors: ["[data-code-run]", '[data-tour="prompt-input"]'],
         placement: "top",
       },
       {
@@ -281,17 +281,8 @@ export default function ProductTour() {
     window.dispatchEvent(new CustomEvent(CLOSE_WORKSPACE_UPLOAD_MODAL_EVENT));
   }, []);
 
-  // Closing mid-way does not count as watching: nothing is recorded, so the
-  // tour is offered again on the next sign-in.
-  const closeTour = useCallback(() => {
-    setDismissed(true);
-    closeAccountModal();
-    closeToolsMenu();
-    closeUploadModal();
-    setAnchorRect(null);
-    setStepIndex(null);
-  }, [closeAccountModal, closeToolsMenu, closeUploadModal]);
-
+  // Ends the tour. Closing it early counts as "seen" as well - a user who is
+  // not interested should not be nagged on every next load.
   const finish = useCallback(() => {
     // The flag lives on the user record, not in the browser, so the walkthrough
     // is not offered again on another device either.
@@ -302,8 +293,8 @@ export default function ProductTour() {
     closeUploadModal();
     setAnchorRect(null);
     setStepIndex(null);
-    // The last steps run inside the workspace settings, so hand the user back to
-    // their chat instead of leaving them on a settings tab.
+    // The tour can leave the user inside the workspace settings, so hand them
+    // back to their chat instead of leaving them on a settings tab.
     if (!pathname.includes("/settings/")) return;
     Workspace.all().then((workspaces = []) => {
       const personal = workspaces.find((workspace) => workspace.is_personal);
@@ -447,9 +438,9 @@ export default function ProductTour() {
     setTooltipHeight(node.offsetHeight || DEFAULT_TOOLTIP_HEIGHT);
   }, [stepIndex, anchorRect]);
 
-  // Everyone who has not watched the tour through to the end gets it on the
-  // home page - a fresh account and a months-old one alike. Users who already
-  // watched it can start it again from their profile (account modal footer).
+  // Anyone whose flag is still empty gets the walkthrough on the home page - a
+  // fresh account and a months-old one alike. Watching it to the end or closing
+  // it sets the flag; it can always be replayed from the profile.
   useEffect(() => {
     if (mode !== "multi" || !user?.id || stepIndex !== null || isMobile) return;
     if (pathname !== paths.home()) return;
@@ -460,9 +451,8 @@ export default function ProductTour() {
   }, [dismissed, mode, pathname, stepIndex, user]);
 
   const handleRequestStart = useCallback(() => {
-    // Replaying the tour marks the user as "not watched" again until they reach
-    // the end once more, so an interrupted replay is not lost.
-    if (user?.id) System.setProductTourCompleted(false);
+    // A replay started from the profile does not clear the flag: whoever gives
+    // up halfway through it still should not be chased by the tour again.
     setDismissed(false);
     closeAccountModal();
     closeToolsMenu();
@@ -472,7 +462,7 @@ export default function ProductTour() {
     navigate(paths.home());
     // Let the home page settle before the first spotlight is measured.
     setTimeout(() => setStepIndex(0), AUTO_START_DELAY_MS);
-  }, [closeAccountModal, closeToolsMenu, closeUploadModal, navigate, user?.id]);
+  }, [closeAccountModal, closeToolsMenu, closeUploadModal, navigate]);
 
   useEffect(() => {
     window.addEventListener(START_PRODUCT_TOUR_EVENT, handleRequestStart);
@@ -522,7 +512,7 @@ export default function ProductTour() {
           </span>
           <button
             type="button"
-            onClick={closeTour}
+            onClick={finish}
             aria-label={t("product_tour.close")}
             className="-m-1 shrink-0 rounded-lg border-none bg-transparent p-1 text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-white light:text-slate-500 light:hover:bg-slate-100 light:hover:text-slate-900"
           >

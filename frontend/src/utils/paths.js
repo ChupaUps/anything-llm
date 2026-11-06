@@ -103,11 +103,17 @@ export default {
       agentConfig: (slug) => {
         return `/workspace/${slug}/settings/agent-config`;
       },
+      agentSkills: (slug) => {
+        return `/workspace/${slug}/settings/agent-skills`;
+      },
       dataConnectors: (slug) => {
         return `/workspace/${slug}/settings/data-connectors`;
       },
       sqlConnectors: (slug) => {
         return `/workspace/${slug}/settings/sql-connectors`;
+      },
+      integrations: (slug) => {
+        return `/workspace/${slug}/settings/integrations`;
       },
     },
     thread: (wsSlug, threadSlug) => {
@@ -206,6 +212,9 @@ export default {
     },
     telegram: () => {
       return `/settings/external-connections/telegram`;
+    },
+    errorNotifications: () => {
+      return `/settings/error-notifications`;
     },
     scheduledJobs: () => {
       return `/settings/scheduled-jobs`;

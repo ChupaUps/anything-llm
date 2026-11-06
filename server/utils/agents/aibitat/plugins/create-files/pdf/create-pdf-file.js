@@ -87,9 +87,8 @@ module.exports.CreatePdfFile = {
               );
 
               const { markdownToPdf } = await import("@mintplex-labs/mdpdf");
-              const { PDFDocument, rgb, StandardFonts } = await import(
-                "pdf-lib"
-              );
+              const { PDFDocument, rgb, StandardFonts } =
+                await import("pdf-lib");
 
               const rawBuffer = await markdownToPdf(content);
               const pdfDoc = await PDFDocument.load(rawBuffer);
@@ -110,19 +109,21 @@ module.exports.CreatePdfFile = {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: createFilesLib.clampSourceContent(content),
               });
 
               createFilesLib.registerOutput(this.super, "PdfFileDownload", {
                 filename: savedFile.displayFilename,
                 storageFilename: savedFile.filename,
                 fileSize: savedFile.fileSize,
+                sourceContent: content,
               });
 
               this.super.introspect(
                 `${this.caller}: Successfully created PDF document "${displayFilename}"`
               );
 
-              return `Successfully created PDF document "${displayFilename}" (${bufferSizeKB}KB).`;
+              return `Successfully created PDF document "${displayFilename}" (${bufferSizeKB}KB). A download button for this file is shown automatically in the chat UI - do NOT write any download link, URL, markdown link, or file path (e.g. /mnt/data/...) in your reply; simply tell the user the document is ready.`;
             } catch (e) {
               this.super.handlerProps.log(
                 `create-pdf-file error: ${e.message}`

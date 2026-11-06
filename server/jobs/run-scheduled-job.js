@@ -136,6 +136,16 @@ process.on("message", async (payload) => {
       log(`Scheduled job error: ${error.message}`);
       errorMessage = error.message;
     }
+
+    // Operational alert: notify the admin (email/Telegram) when a scheduled
+    // task fails. notify() never throws, so this cannot mask the original error.
+    try {
+      const { errorAlertService } = require("../utils/ErrorAlertManager");
+      await errorAlertService.notify(error, {
+        source: "agent",
+        detail: `Scheduled job "${job?.name ?? jobId}" failed`,
+      });
+    } catch {}
   } finally {
     switch (status) {
       case "not_found":

@@ -393,6 +393,41 @@ const Workspace = {
     }
   },
 
+  /**
+   * Read the per-workspace list of disabled agent skill keys. Returns an empty
+   * array when the workspace never customised its skills, so the agent falls
+   * back to whatever the admin enabled globally.
+   * @param {{disabledAgentSkills: string|null}|null} workspace
+   * @returns {string[]}
+   */
+  disabledAgentSkills: function (workspace = null) {
+    if (!workspace?.disabledAgentSkills) return [];
+    try {
+      const parsed = JSON.parse(workspace.disabledAgentSkills);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((key) => typeof key === "string" && key.length > 0);
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Persist the list of disabled agent skill keys for a workspace. Empty array
+   * clears the column so the workspace inherits the admin-wide configuration.
+   * @param {number} workspaceId
+   * @param {string[]} skills - Skill keys to disable for this workspace only.
+   * @returns {Promise<{workspace: Object | null, message: string | null}>}
+   */
+  setDisabledAgentSkills: async function (workspaceId = null, skills = []) {
+    if (!workspaceId)
+      return { workspace: null, message: "No workspace id provided" };
+    const cleaned = Array.isArray(skills)
+      ? [...new Set(skills.filter((key) => typeof key === "string" && key))]
+      : [];
+    const value = cleaned.length ? JSON.stringify(cleaned) : null;
+    return this._update(Number(workspaceId), { disabledAgentSkills: value });
+  },
+
   getWithUser: async function (user = null, clause = {}) {
     if ([ROLES.admin, ROLES.manager].includes(user.role))
       return this.get(clause);

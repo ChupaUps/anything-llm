@@ -10,6 +10,11 @@ const {
 } = require("../helpers/chat/responses");
 const { DocumentManager } = require("../DocumentManager");
 const { abortConnectorOnClientDisconnect } = require("../helpers/abortSignals");
+const {
+  resolveChatFallback,
+  buildFallbackConnector,
+  isRetryableModelError,
+} = require("../helpers/chatModelFallback");
 const { Telemetry } = require("../../models/telemetry");
 const {
   EphemeralAgentHandler,
@@ -258,53 +263,94 @@ async function streamChatWithForEmbed(
 
   // Compress message to ensure prompt passes token limit with room for response
   // and build system messages based on inputs and history.
-  const messages = await LLMConnector.compressMessages(
-    {
-      // Embed visitors are anonymous - never pass request-supplied identity
-      // into chatPrompt and never inject stored memories into the prompt.
-      systemPrompt: await chatPrompt(embed.workspace, null, {
-        skipMemories: true,
-      }),
-      userPrompt: message,
-      contextTexts,
-      chatHistory,
-    },
-    rawHistory
-  );
+  const systemPrompt = await chatPrompt(embed.workspace, null, {
+    // Embed visitors are anonymous - never pass request-supplied identity
+    // into chatPrompt and never inject stored memories into the prompt.
+    skipMemories: true,
+  });
+  const promptArgs = {
+    systemPrompt,
+    userPrompt: message,
+    contextTexts,
+    chatHistory,
+  };
+  const messages = await LLMConnector.compressMessages(promptArgs, rawHistory);
 
-  // If streaming is not explicitly enabled for connector
-  // we do regular waiting of a response and send a single chunk.
-  if (LLMConnector.streamingEnabled() !== true) {
-    console.log(
-      `\x1b[31m[STREAMING DISABLED]\x1b[0m Streaming is not available for ${LLMConnector.constructor.name}. Will use regular chat method.`
-    );
-    const { textResponse, metrics: performanceMetrics } =
-      await LLMConnector.getChatCompletion(messages);
-    completeText = textResponse;
-    metrics = addChatCostToMetrics(performanceMetrics, {
-      routingMetadata,
-      workspace: embed.workspace,
-      connector: LLMConnector,
+  // Runs inference on a connector and returns the finished text + metrics.
+  // Non-streaming results are returned unwritten so a fallback retry emits
+  // exactly once; streaming can only retry before the first token because the
+  // request-creating call throws first.
+  async function runInference(connector, msgs, routeMeta) {
+    if (connector.streamingEnabled() !== true) {
+      console.log(
+        `\x1b[31m[STREAMING DISABLED]\x1b[0m Streaming is not available for ${connector.constructor.name}. Will use regular chat method.`
+      );
+      const { textResponse, metrics: performanceMetrics } =
+        await connector.getChatCompletion(msgs);
+      return {
+        streamed: false,
+        completeText: textResponse,
+        metrics: addChatCostToMetrics(performanceMetrics, {
+          routingMetadata: routeMeta,
+          workspace: embed.workspace,
+          connector,
+        }),
+      };
+    }
+    const stream = await connector.streamGetChatCompletion(msgs);
+    const text = await connector.handleStream(response, stream, {
+      uuid,
+      sources: [],
     });
+    return {
+      streamed: true,
+      completeText: text,
+      metrics: addChatCostToMetrics(stream.metrics, {
+        routingMetadata: routeMeta,
+        workspace: embed.workspace,
+        connector,
+      }),
+    };
+  }
+
+  function emitUnstreamed(result) {
     writeResponseChunk(response, {
       uuid,
       sources: [],
       type: "textResponseChunk",
-      textResponse: completeText,
+      textResponse: result.completeText,
       close: true,
       error: false,
     });
-  } else {
-    const stream = await LLMConnector.streamGetChatCompletion(messages);
-    completeText = await LLMConnector.handleStream(response, stream, {
-      uuid,
-      sources: [],
-    });
-    metrics = addChatCostToMetrics(stream.metrics, {
-      routingMetadata,
-      workspace: embed.workspace,
-      connector: LLMConnector,
-    });
+  }
+
+  try {
+    const result = await runInference(LLMConnector, messages, routingMetadata);
+    completeText = result.completeText;
+    metrics = result.metrics;
+    if (!result.streamed) emitUnstreamed(result);
+  } catch (inferenceError) {
+    // Transparent model fallback on transient provider failures (429/5xx/net).
+    const fallbackConnector = buildFallbackConnector(
+      await resolveChatFallback(),
+      embed.workspace?.openAiTemp
+    );
+    if (!fallbackConnector || !isRetryableModelError(inferenceError))
+      throw inferenceError;
+
+    console.warn(
+      `\x1b[33m[ChatFallback]\x1b[0m Embed primary model failed (${inferenceError.message}); retrying on fallback ${fallbackConnector.constructor.name}.`
+    );
+
+    const fallbackMessages = await fallbackConnector.compressMessages(
+      promptArgs,
+      rawHistory
+    );
+    abortConnectorOnClientDisconnect(response, fallbackConnector);
+    const result = await runInference(fallbackConnector, fallbackMessages, null);
+    completeText = result.completeText;
+    metrics = result.metrics;
+    if (!result.streamed) emitUnstreamed(result);
   }
 
   await UsageEvents.logLLMUsage({

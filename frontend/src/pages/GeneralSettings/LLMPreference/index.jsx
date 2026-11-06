@@ -89,6 +89,7 @@ import LLMItem from "@/components/LLMSelection/LLMItem";
 import CTAButton from "@/components/lib/CTAButton";
 import OMLXOptions from "@/components/LLMSelection/OMLXOptions";
 import ProviderSearchMenu from "@/components/lib/ProviderSearchMenu";
+import ChatModelFallback from "@/pages/GeneralSettings/LLMPreference/ChatModelFallback";
 
 export const MODEL_ROUTER_PROVIDER = {
   name: "Model Router",
@@ -583,6 +584,9 @@ export default function GeneralLLMPreference() {
               </div>
             </div>
           </form>
+          <div className="px-1 md:pl-6 md:pr-[50px] pb-16">
+            <ChatModelFallback />
+          </div>
         </div>
       )}
     </div>

@@ -39,6 +39,29 @@ const Workspace = {
 
     return { workspace, message };
   },
+  /**
+   * Per-workspace agent skill overrides. Returns the list of skill keys the
+   * admin has switched off for this workspace (empty array = inherit global
+   * admin settings).
+   */
+  getAgentSkills: async function (slug) {
+    const res = await fetch(`${API_BASE}/workspace/${slug}/agent-skills`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((r) => r.json())
+      .catch(() => ({ success: false, disabledSkills: [] }));
+    return { disabledSkills: res?.disabledSkills ?? [] };
+  },
+  updateAgentSkills: async function (slug, disabledSkills = []) {
+    return fetch(`${API_BASE}/workspace/${slug}/agent-skills`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify({ disabledSkills }),
+    })
+      .then((r) => r.json())
+      .catch(() => ({ success: false }));
+  },
   modifyEmbeddings: async function (slug, changes = {}) {
     const { workspace, message } = await fetch(
       `${API_BASE}/workspace/${slug}/update-embeddings`,

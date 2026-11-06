@@ -382,6 +382,12 @@ const SidebarOptions = ({ user = null, t }) => (
               roles: ["admin"],
             },
             {
+              btnText: t("settings.error-notifications"),
+              href: paths.settings.errorNotifications(),
+              flex: true,
+              roles: ["admin"],
+            },
+            {
               btnText: t("settings.scheduled-jobs"),
               href: paths.settings.scheduledJobs(),
               flex: true,

@@ -20,6 +20,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
         libxss1 libxtst6 ca-certificates fonts-liberation libappindicator3-1 libnss3 lsb-release \
         xdg-utils git build-essential ffmpeg \
+        # LibreOffice (full suite) for faithful in-chat document previews: converts
+        # docx/xlsx/pptx (and friends) to PDF server-side. carlito/caladea are the
+        # metric-compatible substitutes for Calibri/Cambria used in Office documents.
+        libreoffice fonts-crosextra-carlito fonts-crosextra-caladea \
         # Vulkan loader + Mesa drivers so the embedded Lemonade engine (ENABLE_BUILT_IN_LLM) can use AMD/Intel GPUs
         libvulkan1 mesa-vulkan-drivers && \
     mkdir -p /etc/apt/keyrings && \
@@ -91,6 +95,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
         libxss1 libxtst6 ca-certificates fonts-liberation libappindicator3-1 libnss3 lsb-release \
         xdg-utils git build-essential ffmpeg \
+        # LibreOffice (full suite) for faithful in-chat document previews: converts
+        # docx/xlsx/pptx (and friends) to PDF server-side. carlito/caladea are the
+        # metric-compatible substitutes for Calibri/Cambria used in Office documents.
+        libreoffice fonts-crosextra-carlito fonts-crosextra-caladea \
         # Vulkan loader + Mesa drivers so the embedded Lemonade engine (ENABLE_BUILT_IN_LLM) can use AMD/Intel GPUs
         libvulkan1 mesa-vulkan-drivers && \
     mkdir -p /etc/apt/keyrings && \
@@ -155,7 +163,11 @@ WORKDIR /app
 FROM build AS backend-build
 COPY --chown=anythingllm:anythingllm ./server /app/server/
 WORKDIR /app/server
-RUN yarn install --production --network-timeout 100000 && yarn cache clean
+# --ignore-engines: workspace-integrations pulls `pino` (through `imapflow`) that
+# declares an `engines.node >=20` requirement. We run node 18, but pino and
+# thread-stream work fine there - the field is advisory, so we skip the strict
+# check instead of downgrading the whole IMAP stack.
+RUN yarn install --production --ignore-engines --network-timeout 100000 && yarn cache clean
 WORKDIR /app
 
 # Install collector dependencies
