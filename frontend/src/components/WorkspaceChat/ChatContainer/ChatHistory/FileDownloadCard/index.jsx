@@ -37,8 +37,10 @@ function FileDownloadCard({ props }) {
 
   return (
     <div className="flex justify-center w-full my-2">
-      <div className="w-full max-w-[750px] mr-4">
-        <div className="flex items-center justify-between bg-zinc-800 light:bg-slate-100 light:border light:border-slate-200/50 rounded-xl px-2 py-1">
+      <div className="w-full max-w-[750px] mr-0 md:mr-4">
+        {/* Phones stack the actions under the file name: a single row pushes the
+        preview button past the viewport edge, where it cannot be tapped. */}
+        <div className="flex flex-col gap-y-2 md:flex-row md:items-center md:justify-between md:gap-y-0 bg-zinc-800 light:bg-slate-100 light:border light:border-slate-200/50 rounded-xl px-2 py-1">
           <div className="flex items-center gap-x-3 min-w-0">
             <div
               className={`${badgeBg} ${badgeText} rounded-lg flex items-center justify-center flex-shrink-0 h-[48px] w-[48px] text-xs font-bold`}
@@ -57,20 +59,20 @@ function FileDownloadCard({ props }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-x-2 flex-shrink-0 ml-4">
+          <div className="flex items-center gap-x-2 w-full md:w-auto md:flex-shrink-0 md:ml-4 pb-1 md:pb-0">
             {canPreview && (
               <button
                 onClick={() => setPreviewOpen(true)}
-                className="flex items-center gap-x-2 px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium"
+                className="flex flex-1 md:flex-none items-center justify-center gap-x-2 px-3 md:px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium whitespace-nowrap"
               >
-                <Eye size={16} weight="bold" />
+                <Eye size={16} weight="bold" className="flex-shrink-0" />
                 <span>{t("chatPreview.preview")}</span>
               </button>
             )}
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="flex items-center gap-x-2 px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-1 md:flex-none items-center justify-center gap-x-2 px-3 md:px-4 py-2 rounded-lg border border-zinc-600 light:border-theme-sidebar-border hover:bg-zinc-700 light:hover:bg-theme-bg-secondary transition-colors text-white light:text-theme-text-primary text-sm font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {downloading ? (
                 <CircleNotch size={16} weight="bold" className="animate-spin" />
